@@ -89,8 +89,9 @@ ${YELLOW}ESTIMATED TIME:${NC}
   • Non-interactive: 10-15 minutes
 
 ${YELLOW}REQUIREMENTS:${NC}
-  • Ubuntu 20.04+ or Debian 10+
-  • sudo permissions
+  • Ubuntu 20.04+ / Debian 10+ / macOS 11+
+  • sudo permissions (Linux) or admin access (macOS)
+  • macOS: Docker Desktop installed and running
   • GitHub repository access
   • RapidAPI key ready
 
