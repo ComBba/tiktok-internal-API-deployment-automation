@@ -182,7 +182,8 @@ check_sudo() {
 install_docker() {
     print_header "Installing Docker"
 
-    if command -v docker &> /dev/null; then
+    # Check if Docker is already installed (Linux only - macOS needs additional components)
+    if command -v docker &> /dev/null && [[ "$OS" != "macos" ]]; then
         DOCKER_VERSION=$(docker --version | cut -d ' ' -f3 | cut -d ',' -f1)
         print_success "Docker already installed (version: $DOCKER_VERSION)"
         return 0
