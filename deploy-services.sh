@@ -201,11 +201,12 @@ apply_configuration_from_cache() {
         cp "$TEMPLATE" "$dir/.env"
 
         # Replace values (using cross-platform sed_inplace function)
-        sed_inplace "s/PORT=XXXX/PORT=$port/" "$dir/.env"
+        # Use | as delimiter to avoid conflicts with special chars in values
+        sed_inplace "s|PORT=XXXX|PORT=$port|" "$dir/.env"
         sed_inplace "s|MONGO_URI=.*|MONGO_URI=$MONGO_URI|" "$dir/.env"
-        sed_inplace "s/MONGO_DB=.*/MONGO_DB=$MONGO_DB/" "$dir/.env"
-        sed_inplace "s/INTERNAL_API_KEY=.*/INTERNAL_API_KEY=$API_KEY/" "$dir/.env"
-        sed_inplace "s/API_MASTER_KEY=.*/API_MASTER_KEY=$API_KEY/" "$dir/.env"
+        sed_inplace "s|MONGO_DB=.*|MONGO_DB=$MONGO_DB|" "$dir/.env"
+        sed_inplace "s|INTERNAL_API_KEY=.*|INTERNAL_API_KEY=$API_KEY|" "$dir/.env"
+        sed_inplace "s|API_MASTER_KEY=.*|API_MASTER_KEY=$API_KEY|" "$dir/.env"
 
         print_success "$service_name configured (Port: $port)"
         ((idx++))
@@ -535,11 +536,12 @@ interactive_env_setup() {
         cp "$TEMPLATE" "$dir/.env"
 
         # Replace values (using cross-platform sed_inplace function)
-        sed_inplace "s/PORT=XXXX/PORT=$port/" "$dir/.env"
+        # Use | as delimiter to avoid conflicts with special chars in values
+        sed_inplace "s|PORT=XXXX|PORT=$port|" "$dir/.env"
         sed_inplace "s|MONGO_URI=.*|MONGO_URI=$MONGO_URI|" "$dir/.env"
-        sed_inplace "s/MONGO_DB=.*/MONGO_DB=$MONGO_DB/" "$dir/.env"
-        sed_inplace "s/INTERNAL_API_KEY=.*/INTERNAL_API_KEY=$API_KEY/" "$dir/.env"
-        sed_inplace "s/API_MASTER_KEY=.*/API_MASTER_KEY=$API_KEY/" "$dir/.env"
+        sed_inplace "s|MONGO_DB=.*|MONGO_DB=$MONGO_DB|" "$dir/.env"
+        sed_inplace "s|INTERNAL_API_KEY=.*|INTERNAL_API_KEY=$API_KEY|" "$dir/.env"
+        sed_inplace "s|API_MASTER_KEY=.*|API_MASTER_KEY=$API_KEY|" "$dir/.env"
 
         print_success "$service_name configured (Port: $port)"
     done
