@@ -64,9 +64,10 @@ cd tiktok-internal-API-deployment-automation
 
 - **Operating System**: Ubuntu 20.04+ / Debian 10+ / macOS 11+
 - **User Permissions**: sudo access (Linux) or admin access (macOS)
-- **Network**: Ports 8082-8085 available
+- **Network**: Ports 8082-8085 available (customizable)
 - **GitHub Access**: SSH key or Personal Access Token
-- **macOS**: Homebrew will be auto-installed if needed (for Docker CLI + Colima)
+- **macOS**: Homebrew, Docker CLI, Docker Compose, and Colima auto-install via bootstrap.sh
+- **MongoDB**: MongoDB Atlas URI and credentials ready
 
 ## 📁 Repository Structure
 
@@ -200,9 +201,15 @@ Deploys all services with Docker Compose.
 - Environment variable validation
 - Automatic health check waiting
 - Service start/stop/restart
+- **Configuration cache** - Resume interrupted setup
+- **Custom ports** - Configure ports interactively
+- **macOS/Linux compatible** - Auto-detects docker-compose v1/v2
 
 **Usage:**
 ```bash
+# Interactive setup (first time - with cache support)
+./deploy-services.sh --setup-env
+
 # Deploy all services (sequential)
 ./deploy-services.sh
 
@@ -218,6 +225,18 @@ Deploys all services with Docker Compose.
 # Restart specific service
 ./deploy-services.sh --restart user-info
 ```
+
+**Cache Feature:**
+If interrupted during setup, the script saves your inputs to `.deployment_cache`:
+- Environment type (production/test)
+- MongoDB URI and database
+- API keys
+- Port configurations
+
+On next run, you can:
+1. Resume from cache (use previous values)
+2. Start fresh (clear and re-enter)
+3. View cached values before deciding
 
 **Configuration:**
 Edit `config/services.conf`:
@@ -307,29 +326,47 @@ Three template files are provided:
 
 **1. .env.common.template** - Shared settings
 ```bash
-MONGO_URI=mongodb+srv://...
+PORT=XXXX                                    # Service-specific port
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/
+MONGO_DB=YOUR_DATABASE_NAME
 INTERNAL_API_KEY=YOUR_INTERNAL_API_KEY_HERE
+API_MASTER_KEY=YOUR_INTERNAL_API_KEY_HERE   # Same as INTERNAL_API_KEY
+GLOBAL_RPS=20                               # Rate limiting
+LOG_LEVEL=info
 ```
 
 **2. .env.production.template** - Production settings
 ```bash
+PORT=XXXX
 ENVIRONMENT=production
 MONGO_DB=production_database
 LOG_LEVEL=info
+LOG_FORMAT=json
 ```
 
 **3. .env.test.template** - Test settings
 ```bash
+PORT=XXXX
 ENVIRONMENT=test
 MONGO_DB=test_database
 LOG_LEVEL=debug
 DEBUG=true
 ```
 
-**Usage:**
+**Interactive Setup** (Recommended):
+```bash
+./deploy-services.sh --setup-env
+# Prompts for all required values
+# Saves to cache for easy resume
+# Creates .env files in all service directories
+```
+
+**Manual Setup:**
 1. Copy the appropriate template to each service directory as `.env`
-2. Customize service-specific values (PORT, etc.)
-3. Never commit `.env` files to Git
+2. Replace `XXXX` with actual port numbers (8002-8005 or custom)
+3. Update MongoDB URI and database name
+4. Set API keys (same value for all services)
+5. Never commit `.env` files to Git (already in .gitignore)
 
 ## 🔐 Security Best Practices
 
@@ -388,14 +425,61 @@ done
 
 ## 🐛 Troubleshooting
 
+### macOS-Specific Issues
+
+**Problem:** `docker-compose: command not found`
+```bash
+# Solution: Install docker-compose via Homebrew
+brew install docker-compose
+
+# Verify installation
+docker-compose --version
+
+# If bootstrap.sh was run before, re-run it
+./bootstrap.sh
+```
+
+**Problem:** `docker: unknown command: docker compose`
+```bash
+# Solution: Colima doesn't support docker compose plugin
+# Use standalone docker-compose (installed via Homebrew)
+brew install docker-compose
+
+# Script auto-detects and uses docker-compose
+```
+
+**Problem:** Colima not running
+```bash
+# Check Colima status
+colima status
+
+# Start Colima
+colima start
+
+# Restart Colima if needed
+colima restart
+```
+
+**Problem:** sed errors with special characters in API keys
+```bash
+# This is already fixed in the script
+# API keys with / = + characters are now handled correctly
+# If you see sed errors, pull latest changes:
+git pull origin main
+```
+
 ### Bootstrap Issues
 
 **Problem:** Docker installation fails
 ```bash
-# Solution: Manual Docker installation
+# Linux: Manual Docker installation
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 sudo usermod -aG docker $USER
+
+# macOS: Ensure Homebrew is installed
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install docker docker-compose colima
 ```
 
 **Problem:** Permission denied
@@ -596,4 +680,20 @@ sleep 30
 ---
 
 **Last Updated:** 2025-10-22
-**Version:** 1.0.0
+**Version:** 1.1.0
+
+## 📝 Changelog
+
+### Version 1.1.0 (2025-10-22)
+- ✅ Added configuration cache for resumable setup
+- ✅ macOS full compatibility (bash 3.2, BSD sed, docker-compose)
+- ✅ Docker Compose v1/v2 auto-detection
+- ✅ Special character handling in API keys (/, =, +)
+- ✅ Custom port configuration support
+- ✅ Fixed bootstrap.sh to ensure docker-compose installation on macOS
+- ❌ Removed RapidAPI configuration (not used by any service)
+
+### Version 1.0.0 (2025-10-21)
+- Initial release
+- Automated deployment for 4 TikTok Internal API services
+- Bootstrap, GitHub setup, clone, deploy, health check scripts

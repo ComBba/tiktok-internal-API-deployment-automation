@@ -76,8 +76,9 @@ cd tiktok-internal-API-deployment-automation
 # Clone all 4 services
 ./clone-repositories.sh --parallel
 
-# Configure environment (Interactive)
+# Configure environment (Interactive with cache support)
 ./deploy-services.sh --setup-env
+# → If cache exists: Resume, Start fresh, or View cached values
 # → Select: 1 (Production) or 2 (Test)
 # → Enter MongoDB URI
 # → Enter MongoDB Database
@@ -87,6 +88,9 @@ cd tiktok-internal-API-deployment-automation
 #     User Posts API [default: 8083]: (Enter custom port or press Enter)
 #     Search Users API [default: 8084]: (Enter custom port or press Enter)
 #     Post Detail API [default: 8085]: (Enter custom port or press Enter)
+#
+# ✨ New: Configuration is auto-saved to cache!
+# If interrupted, re-run and choose "Resume from cache"
 
 # Deploy services
 ./deploy-services.sh --parallel
@@ -141,11 +145,44 @@ ls ../tiktok-user-posts/.env
 # If missing, run: ./deploy-services.sh --setup-env
 ```
 
+### Issue: docker-compose: command not found (macOS)
+```bash
+# Solution: Install docker-compose
+brew install docker-compose
+
+# Verify
+docker-compose --version
+
+# Then retry deployment
+./deploy-services.sh --parallel
+```
+
+### Issue: sed error with API keys
+```bash
+# Solution: Already fixed! Pull latest changes
+git pull origin main
+
+# API keys with special characters (/, =, +) now work correctly
+```
+
+### Issue: Setup interrupted - need to re-enter everything
+```bash
+# Solution: Use cache feature!
+# Configuration is automatically saved
+# On next run, choose "Resume from cache"
+
+./deploy-services.sh --setup-env
+# → Select option 1: Resume from cache
+```
+
 ### Issue: Health check fails
 ```bash
 # Solution: Check Docker logs
 cd ../SERVICE_NAME
-docker-compose logs
+docker compose logs  # Note: 'docker compose' not 'docker-compose' for v2
+
+# Or check container status
+docker ps -a
 ```
 
 ## 📚 Get Help
