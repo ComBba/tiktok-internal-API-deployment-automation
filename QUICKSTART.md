@@ -12,12 +12,8 @@ Single-page deployment guide for new servers.
 
 ```bash
 # Clone deployment scripts
-git clone YOUR_REPO/deployment-automation.git
-cd deployment-automation
-
-# Edit GitHub username in config
-nano config/repositories.conf
-# Replace YOUR_GITHUB_USERNAME with your actual username
+git clone https://github.com/ComBba/tiktok-internal-API-deployment-automation.git
+cd tiktok-internal-API-deployment-automation
 
 # Run all-in-one deployment
 ./start.sh
@@ -73,17 +69,7 @@ nano config/repositories.conf
 # → Enter your GitHub token
 ```
 
-### Step 3: Configure Repositories (1 min)
-
-```bash
-# Edit repository URLs
-nano config/repositories.conf
-
-# Replace YOUR_GITHUB_USERNAME with your actual username
-# Example: git@github.com:johndoe/tiktok-user-posts.git
-```
-
-### Step 4: Clone & Deploy (10 min)
+### Step 3: Clone & Deploy (10 min)
 
 ```bash
 # Clone all 4 services
@@ -106,7 +92,7 @@ nano config/repositories.conf
 ./deploy-services.sh --parallel
 ```
 
-### Step 5: Verify (1 min)
+### Step 4: Verify (1 min)
 
 ```bash
 # Check all services

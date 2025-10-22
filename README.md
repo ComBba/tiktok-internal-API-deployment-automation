@@ -21,8 +21,8 @@ This repository provides a complete automation solution for deploying 4 independ
 
 ```bash
 # 1. Clone this repository
-git clone git@github.com:YOUR_ORG/deployment-automation.git
-cd deployment-automation
+git clone https://github.com/ComBba/tiktok-internal-API-deployment-automation.git
+cd tiktok-internal-API-deployment-automation
 
 # 2. Run all-in-one deployment
 ./start.sh
@@ -40,8 +40,8 @@ cd deployment-automation
 
 ```bash
 # 1. Clone this repository
-git clone git@github.com:YOUR_ORG/deployment-automation.git
-cd deployment-automation
+git clone https://github.com/ComBba/tiktok-internal-API-deployment-automation.git
+cd tiktok-internal-API-deployment-automation
 
 # 2. Run bootstrap (installs Docker, Git, etc.)
 ./bootstrap.sh
@@ -177,7 +177,7 @@ Clones all service repositories based on `config/repositories.conf`.
 Edit `config/repositories.conf`:
 ```
 # Format: REPO_URL BRANCH TARGET_DIR
-git@github.com:YOUR_ORG/tiktok-user-posts.git main /home/user/github/tiktok-user-posts
+git@github.com:ComBba/tiktok-user-posts.git main $HOME/github/tiktok-user-posts
 ```
 
 ### 4. deploy-services.sh - Service Deployment
@@ -271,10 +271,10 @@ Edit `config/repositories.conf` to customize repositories:
 
 ```bash
 # Format: REPO_URL BRANCH TARGET_DIR
-git@github.com:YOUR_ORG/tiktok-user-posts.git main ~/github/tiktok-user-posts
-git@github.com:YOUR_ORG/tiktok-user-info.git main ~/github/tiktok-user-info
-git@github.com:YOUR_ORG/tiktok-post-detail.git main ~/github/tiktok-post-detail
-git@github.com:YOUR_ORG/tiktok-search-users.git main ~/github/tiktok-search-users
+git@github.com:ComBba/tiktok-user-posts.git main ~/github/tiktok-user-posts
+git@github.com:ComBba/tiktok-user-info.git main ~/github/tiktok-user-info
+git@github.com:ComBba/tiktok-post-detail.git main ~/github/tiktok-post-detail
+git@github.com:ComBba/tiktok-search-users.git main ~/github/tiktok-search-users
 ```
 
 ### Services Configuration
@@ -494,8 +494,8 @@ tar -czf logs-backup-$(date +%Y%m%d).tar.gz ~/github/*/logs/
 
 ```bash
 # 1. Clone deployment automation
-git clone git@github.com:YOUR_ORG/deployment-automation.git
-cd deployment-automation
+git clone https://github.com/ComBba/tiktok-internal-API-deployment-automation.git
+cd tiktok-internal-API-deployment-automation
 
 # 2. Initialize server
 ./bootstrap.sh
@@ -565,15 +565,11 @@ sleep 30
 
 ## 📚 Additional Resources
 
-### Documentation
-- [TikTok Internal APIs Architecture](https://github.com/YOUR_ORG/social-seeding-backend/blob/main/docs/ARCHITECTURE.md)
-- [Service Specifications](https://github.com/YOUR_ORG/social-seeding-backend/blob/main/docs/SERVICES.md)
-
 ### Related Repositories
-- [tiktok-user-posts](https://github.com/YOUR_ORG/tiktok-user-posts)
-- [tiktok-user-info](https://github.com/YOUR_ORG/tiktok-user-info)
-- [tiktok-search-users](https://github.com/YOUR_ORG/tiktok-search-users)
-- [tiktok-post-detail](https://github.com/YOUR_ORG/tiktok-post-detail)
+- [tiktok-user-posts](https://github.com/ComBba/tiktok-user-posts)
+- [tiktok-user-info](https://github.com/ComBba/tiktok-user-info)
+- [tiktok-search-users](https://github.com/ComBba/tiktok-search-users)
+- [tiktok-post-detail](https://github.com/ComBba/tiktok-post-detail)
 
 ## 📄 License
 

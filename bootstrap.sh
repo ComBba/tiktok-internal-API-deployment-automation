@@ -7,7 +7,7 @@
 # for deploying TikTok Internal API services.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/YOUR_ORG/deployment-automation/main/bootstrap.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/ComBba/tiktok-internal-API-deployment-automation/main/bootstrap.sh | bash
 #   OR
 #   ./bootstrap.sh [--dry-run]
 # =============================================================================
@@ -359,7 +359,7 @@ download_scripts() {
     print_warning "Script download from GitHub not implemented yet"
     print_info "Please clone the repository manually:"
     print_info "  cd $HOME"
-    print_info "  git clone git@github.com:YOUR_ORG/deployment-automation.git"
+    print_info "  git clone https://github.com/ComBba/tiktok-internal-API-deployment-automation.git"
 }
 
 # =============================================================================
