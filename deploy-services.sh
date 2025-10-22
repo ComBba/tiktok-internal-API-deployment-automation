@@ -199,8 +199,13 @@ interactive_env_setup() {
         "8085:$GITHUB_DIR/tiktok-post-detail:Post Detail API"
     )
 
-    declare -A service_ports
+    # Use indexed array for bash 3.2 compatibility (macOS default bash)
+    declare -a service_ports=()
+    declare -a service_names=()
+    declare -a service_dirs=()
+    declare -a service_descs=()
 
+    local idx=0
     for service_def in "${service_defs[@]}"; do
         IFS=':' read -r default_port dir description <<< "$service_def"
         local service_name=$(basename "$dir")
@@ -223,24 +228,22 @@ interactive_env_setup() {
             new_port=$default_port
         fi
 
-        service_ports[$service_name]=$new_port
+        service_ports[$idx]=$new_port
+        service_names[$idx]=$service_name
+        service_dirs[$idx]=$dir
+        service_descs[$idx]=$description
         print_success "$service_name: Port $new_port"
         echo ""
+        ((idx++))
     done
 
     # Apply to each service
     print_header "Applying Configuration to Services"
 
-    for service_def in "${service_defs[@]}"; do
-        IFS=':' read -r default_port dir description <<< "$service_def"
-        local service_name=$(basename "$dir")
-
-        if [[ ! -d "$dir" ]]; then
-            print_warning "$service_name: Directory not found, skipping"
-            continue
-        fi
-
-        local port=${service_ports[$service_name]}
+    for ((i=0; i<${#service_names[@]}; i++)); do
+        local service_name=${service_names[$i]}
+        local dir=${service_dirs[$i]}
+        local port=${service_ports[$i]}
 
         print_info "Configuring $service_name (Port: $port)..."
 
@@ -280,33 +283,31 @@ interactive_env_setup() {
 
 EOF
 
-    for service_def in "${service_defs[@]}"; do
-        IFS=':' read -r default_port dir description <<< "$service_def"
-        local service_name=$(basename "$dir")
+    for ((i=0; i<${#service_names[@]}; i++)); do
+        local service_name=${service_names[$i]}
+        local dir=${service_dirs[$i]}
+        local port=${service_ports[$i]}
 
-        if [[ -d "$dir" ]]; then
-            local port=${service_ports[$service_name]}
-            # Convert full service names to short names
-            case $service_name in
-                tiktok-user-info)
-                    short_name="user-info"
-                    ;;
-                tiktok-user-posts)
-                    short_name="user-posts"
-                    ;;
-                tiktok-search-users)
-                    short_name="search-users"
-                    ;;
-                tiktok-post-detail)
-                    short_name="post-detail"
-                    ;;
-                *)
-                    short_name=$service_name
-                    ;;
-            esac
+        # Convert full service names to short names
+        case $service_name in
+            tiktok-user-info)
+                short_name="user-info"
+                ;;
+            tiktok-user-posts)
+                short_name="user-posts"
+                ;;
+            tiktok-search-users)
+                short_name="search-users"
+                ;;
+            tiktok-post-detail)
+                short_name="post-detail"
+                ;;
+            *)
+                short_name=$service_name
+                ;;
+        esac
 
-            echo "$short_name $port $dir /health" >> "$CONFIG_FILE"
-        fi
+        echo "$short_name $port $dir /health" >> "$CONFIG_FILE"
     done
 
     print_success "Service configuration updated"
@@ -318,13 +319,10 @@ EOF
     echo "MongoDB Database: $MONGO_DB"
     echo ""
     echo "Service Ports:"
-    for service_def in "${service_defs[@]}"; do
-        IFS=':' read -r default_port dir description <<< "$service_def"
-        local service_name=$(basename "$dir")
-        if [[ -d "$dir" ]]; then
-            local port=${service_ports[$service_name]}
-            echo "  • $description: $port"
-        fi
+    for ((i=0; i<${#service_names[@]}; i++)); do
+        local description=${service_descs[$i]}
+        local port=${service_ports[$i]}
+        echo "  • $description: $port"
     done
     echo ""
 
