@@ -182,13 +182,6 @@ interactive_env_setup() {
     fi
     API_KEY=$API_KEY_INPUT
 
-    read -p "RapidAPI Key: " RAPIDAPI_KEY
-
-    if [[ -z "$RAPIDAPI_KEY" ]]; then
-        print_error "RapidAPI Key is required"
-        exit 1
-    fi
-
     print_success "Configuration collected"
     echo ""
 
@@ -260,7 +253,6 @@ interactive_env_setup() {
         sed -i "s/MONGO_DB=.*/MONGO_DB=$MONGO_DB/" "$dir/.env"
         sed -i "s/INTERNAL_API_KEY=.*/INTERNAL_API_KEY=$API_KEY/" "$dir/.env"
         sed -i "s/API_MASTER_KEY=.*/API_MASTER_KEY=$API_KEY/" "$dir/.env"
-        sed -i "s/EXTERNAL_API_KEY=.*/EXTERNAL_API_KEY=$RAPIDAPI_KEY/" "$dir/.env"
 
         print_success "$service_name configured (Port: $port)"
     done

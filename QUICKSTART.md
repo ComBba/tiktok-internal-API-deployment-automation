@@ -79,10 +79,9 @@ cd tiktok-internal-API-deployment-automation
 # Configure environment (Interactive)
 ./deploy-services.sh --setup-env
 # → Select: 1 (Production) or 2 (Test)
-# → Enter MongoDB URI (or press Enter for default)
-# → Enter MongoDB Database (or press Enter for default)
-# → Enter Internal API Key (or press Enter for default)
-# → Enter RapidAPI Key (required)
+# → Enter MongoDB URI
+# → Enter MongoDB Database
+# → Enter Internal API Key
 # → Configure ports for each service:
 #     User Info API [default: 8082]: (Enter custom port or press Enter)
 #     User Posts API [default: 8083]: (Enter custom port or press Enter)

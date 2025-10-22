@@ -93,12 +93,12 @@ ${YELLOW}REQUIREMENTS:${NC}
   • sudo permissions (Linux) or admin access (macOS)
   • macOS: Homebrew auto-installs (Docker CLI + Colima)
   • GitHub repository access
-  • RapidAPI key ready
+  • MongoDB URI and API keys ready
 
 ${YELLOW}WHAT YOU'LL NEED:${NC}
   1. GitHub username/organization
-  2. MongoDB URI (default provided)
-  3. RapidAPI key
+  2. MongoDB URI
+  3. Internal API Key
   4. Port preferences (defaults: 8082-8085)
 
 EOF
