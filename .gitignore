@@ -32,3 +32,8 @@ Thumbs.db
 *.backup
 *.tar.gz
 *.zip
+
+# Deployment cache (temporary input storage)
+.deployment_cache
+.env_setup_cache
+config/services.conf.backup
