@@ -62,10 +62,11 @@ cd tiktok-internal-API-deployment-automation
 
 ## 📋 Prerequisites
 
-- **Operating System**: Ubuntu 20.04+ or Debian 10+
-- **User Permissions**: sudo access
+- **Operating System**: Ubuntu 20.04+ / Debian 10+ / macOS 11+
+- **User Permissions**: sudo access (Linux) or admin access (macOS)
 - **Network**: Ports 8082-8085 available
 - **GitHub Access**: SSH key or Personal Access Token
+- **macOS Only**: Docker Desktop installed and running
 
 ## 📁 Repository Structure
 

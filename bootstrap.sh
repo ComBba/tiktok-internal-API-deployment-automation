@@ -67,8 +67,8 @@ ${YELLOW}NEXT STEPS:${NC}
   4. ./health-check.sh              # Verify deployment
 
 ${YELLOW}REQUIREMENTS:${NC}
-  • Ubuntu 20.04+ or Debian 10+
-  • sudo permissions
+  • Ubuntu 20.04+ / Debian 10+ / macOS 11+
+  • sudo permissions (Linux) or admin access (macOS)
   • Internet connection
 
 EOF
@@ -127,18 +127,27 @@ print_info() {
 check_os() {
     print_header "Checking Operating System"
 
+    # Detect MacOS
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        OS="macos"
+        OS_VERSION=$(sw_vers -productVersion)
+        print_success "Detected OS: macOS $OS_VERSION"
+        return 0
+    fi
+
+    # Detect Linux
     if [[ -f /etc/os-release ]]; then
         . /etc/os-release
         OS=$ID
         OS_VERSION=$VERSION_ID
         print_success "Detected OS: $NAME $VERSION"
     else
-        print_error "Cannot detect OS. This script supports Ubuntu/Debian only."
+        print_error "Cannot detect OS. This script supports Ubuntu/Debian/macOS only."
         exit 1
     fi
 
     if [[ "$OS" != "ubuntu" && "$OS" != "debian" ]]; then
-        print_error "This script supports Ubuntu/Debian only. Detected: $OS"
+        print_error "This script supports Ubuntu/Debian/macOS only. Detected: $OS"
         exit 1
     fi
 }
@@ -146,6 +155,18 @@ check_os() {
 check_sudo() {
     print_header "Checking Sudo Permissions"
 
+    # MacOS - Check admin access differently
+    if [[ "$OS" == "macos" ]]; then
+        if groups | grep -q admin; then
+            print_success "Admin permissions available"
+        else
+            print_warning "This script requires admin permissions."
+            print_info "You may be prompted for your password."
+        fi
+        return 0
+    fi
+
+    # Linux - Check sudo
     if sudo -n true 2>/dev/null; then
         print_success "Sudo permissions available"
     else
@@ -172,6 +193,31 @@ install_docker() {
         return 0
     fi
 
+    # MacOS Docker Installation
+    if [[ "$OS" == "macos" ]]; then
+        print_warning "Docker Desktop is required for macOS"
+        print_info "Please install Docker Desktop manually:"
+        echo ""
+        echo "  1. Download Docker Desktop for Mac:"
+        echo "     https://www.docker.com/products/docker-desktop/"
+        echo ""
+        echo "  2. Install Docker Desktop"
+        echo "  3. Start Docker Desktop from Applications"
+        echo "  4. Wait for Docker to start (you'll see a whale icon in the menu bar)"
+        echo ""
+        read -p "Press Enter after Docker Desktop is installed and running..."
+
+        # Verify Docker is running
+        if command -v docker &> /dev/null && docker ps &> /dev/null; then
+            print_success "Docker is running!"
+            return 0
+        else
+            print_error "Docker is not running. Please start Docker Desktop and try again."
+            exit 1
+        fi
+    fi
+
+    # Linux Docker Installation
     print_info "Installing Docker..."
 
     # Remove old versions
@@ -231,9 +277,15 @@ install_docker_compose() {
         return 0
     fi
 
+    # MacOS - Docker Desktop includes Docker Compose
+    if [[ "$OS" == "macos" ]]; then
+        print_success "Docker Compose is included in Docker Desktop"
+        return 0
+    fi
+
+    # Linux - Install Docker Compose standalone
     print_info "Installing Docker Compose standalone..."
 
-    # Install Docker Compose standalone
     COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d '"' -f 4)
     sudo curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" \
         -o /usr/local/bin/docker-compose
@@ -260,6 +312,23 @@ install_git() {
         return 0
     fi
 
+    # MacOS - Prompt to install Xcode Command Line Tools
+    if [[ "$OS" == "macos" ]]; then
+        print_info "Installing Xcode Command Line Tools (includes Git)..."
+        xcode-select --install 2>/dev/null || true
+        print_warning "If a popup appears, please click 'Install' and wait for completion"
+        read -p "Press Enter after installation completes..."
+
+        if command -v git &> /dev/null; then
+            print_success "Git installed successfully"
+            return 0
+        else
+            print_error "Git installation failed. Please install Xcode Command Line Tools manually."
+            exit 1
+        fi
+    fi
+
+    # Linux - Install Git via apt
     print_info "Installing Git..."
     sudo apt-get update
     sudo apt-get install -y git
@@ -279,6 +348,22 @@ install_additional_tools() {
         return 0
     fi
 
+    # MacOS - Install via Homebrew
+    if [[ "$OS" == "macos" ]]; then
+        # Check if Homebrew is installed
+        if ! command -v brew &> /dev/null; then
+            print_warning "Homebrew is not installed"
+            print_info "Installing Homebrew..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        fi
+
+        print_info "Installing essential tools via Homebrew..."
+        brew install curl wget jq
+        print_success "Additional tools installed successfully"
+        return 0
+    fi
+
+    # Linux - Install via apt
     print_info "Installing essential tools..."
     sudo apt-get update
     sudo apt-get install -y curl wget jq net-tools
@@ -292,6 +377,12 @@ install_additional_tools() {
 
 configure_firewall() {
     print_header "Configuring Firewall"
+
+    # MacOS - No firewall configuration needed for local development
+    if [[ "$OS" == "macos" ]]; then
+        print_success "Firewall configuration not required for macOS (local development)"
+        return 0
+    fi
 
     if ! command -v ufw &> /dev/null; then
         print_warning "UFW not installed, skipping firewall configuration"

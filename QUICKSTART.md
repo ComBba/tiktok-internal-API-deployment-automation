@@ -4,9 +4,10 @@ Single-page deployment guide for new servers.
 
 ## 📋 Prerequisites
 
-- Ubuntu 20.04+ or Debian 10+
-- sudo access
+- Ubuntu 20.04+ / Debian 10+ / macOS 11+
+- sudo access (Linux) or admin access (macOS)
 - GitHub account with repository access
+- macOS: Docker Desktop installed
 
 ## ⭐ All-in-One Deployment (Easiest)
 
