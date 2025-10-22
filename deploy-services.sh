@@ -70,6 +70,22 @@ sed_inplace() {
     fi
 }
 
+# Safe environment variable replacement function
+# Handles special characters and ensures idempotent behavior
+# Args: $1=file, $2=var_name, $3=value
+safe_replace_env_var() {
+    local file="$1"
+    local var_name="$2"
+    local value="$3"
+
+    # Escape special characters for sed (& / \)
+    local escaped_value=$(printf '%s\n' "$value" | sed 's/[&/\\]/\\&/g')
+
+    # Use sed with anchored pattern to match only start of line
+    # This ensures we only replace the exact variable, not partial matches
+    sed_inplace "s|^${var_name}=.*|${var_name}=${escaped_value}|" "$file"
+}
+
 # Docker Compose command wrapper
 # Supports both docker-compose (v1) and docker compose (v2)
 docker_compose() {
@@ -228,28 +244,34 @@ apply_configuration_from_cache() {
         # Copy template
         cp "$source_template" "$dir/.env"
 
-        # Detect environment variable naming convention from the copied file
-        local uses_mongodb_uri=false
-        if grep -q "MONGODB_URI" "$dir/.env"; then
-            uses_mongodb_uri=true
+        # Replace environment variables using safe function
+        # This ensures proper handling of special characters and idempotent behavior
+        safe_replace_env_var "$dir/.env" "PORT" "$port"
+
+        # Handle MongoDB configuration - support both naming conventions
+        # Update MONGODB_URI/MONGODB_DATABASE if present
+        if grep -q "^MONGODB_URI=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "MONGODB_URI" "$MONGO_URI"
+        fi
+        if grep -q "^MONGODB_DATABASE=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "MONGODB_DATABASE" "$MONGO_DB"
         fi
 
-        # Replace values (using cross-platform sed_inplace function)
-        # Use | as delimiter to avoid conflicts with special chars in values
-        sed_inplace "s|PORT=.*|PORT=$port|" "$dir/.env"
-
-        if [[ "$uses_mongodb_uri" == true ]]; then
-            # Service uses MONGODB_URI naming
-            sed_inplace "s|MONGODB_URI=.*|MONGODB_URI=$MONGO_URI|" "$dir/.env"
-            sed_inplace "s|MONGODB_DATABASE=.*|MONGODB_DATABASE=$MONGO_DB|" "$dir/.env"
-        else
-            # Service uses MONGO_URI naming
-            sed_inplace "s|MONGO_URI=.*|MONGO_URI=$MONGO_URI|" "$dir/.env"
-            sed_inplace "s|MONGO_DB=.*|MONGO_DB=$MONGO_DB|" "$dir/.env"
+        # Update MONGO_URI/MONGO_DB if present
+        if grep -q "^MONGO_URI=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "MONGO_URI" "$MONGO_URI"
+        fi
+        if grep -q "^MONGO_DB=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "MONGO_DB" "$MONGO_DB"
         fi
 
-        sed_inplace "s|INTERNAL_API_KEY=.*|INTERNAL_API_KEY=$API_KEY|" "$dir/.env"
-        sed_inplace "s|API_MASTER_KEY=.*|API_MASTER_KEY=$API_KEY|" "$dir/.env"
+        # Handle API keys - update both if present
+        if grep -q "^INTERNAL_API_KEY=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "INTERNAL_API_KEY" "$API_KEY"
+        fi
+        if grep -q "^API_MASTER_KEY=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "API_MASTER_KEY" "$API_KEY"
+        fi
 
         print_success "$service_name configured (Port: $port)"
         ((idx++))
@@ -619,28 +641,34 @@ interactive_env_setup() {
         # Copy template
         cp "$source_template" "$dir/.env"
 
-        # Detect environment variable naming convention from the copied file
-        local uses_mongodb_uri=false
-        if grep -q "MONGODB_URI" "$dir/.env"; then
-            uses_mongodb_uri=true
+        # Replace environment variables using safe function
+        # This ensures proper handling of special characters and idempotent behavior
+        safe_replace_env_var "$dir/.env" "PORT" "$port"
+
+        # Handle MongoDB configuration - support both naming conventions
+        # Update MONGODB_URI/MONGODB_DATABASE if present
+        if grep -q "^MONGODB_URI=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "MONGODB_URI" "$MONGO_URI"
+        fi
+        if grep -q "^MONGODB_DATABASE=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "MONGODB_DATABASE" "$MONGO_DB"
         fi
 
-        # Replace values (using cross-platform sed_inplace function)
-        # Use | as delimiter to avoid conflicts with special chars in values
-        sed_inplace "s|PORT=.*|PORT=$port|" "$dir/.env"
-
-        if [[ "$uses_mongodb_uri" == true ]]; then
-            # Service uses MONGODB_URI naming
-            sed_inplace "s|MONGODB_URI=.*|MONGODB_URI=$MONGO_URI|" "$dir/.env"
-            sed_inplace "s|MONGODB_DATABASE=.*|MONGODB_DATABASE=$MONGO_DB|" "$dir/.env"
-        else
-            # Service uses MONGO_URI naming
-            sed_inplace "s|MONGO_URI=.*|MONGO_URI=$MONGO_URI|" "$dir/.env"
-            sed_inplace "s|MONGO_DB=.*|MONGO_DB=$MONGO_DB|" "$dir/.env"
+        # Update MONGO_URI/MONGO_DB if present
+        if grep -q "^MONGO_URI=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "MONGO_URI" "$MONGO_URI"
+        fi
+        if grep -q "^MONGO_DB=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "MONGO_DB" "$MONGO_DB"
         fi
 
-        sed_inplace "s|INTERNAL_API_KEY=.*|INTERNAL_API_KEY=$API_KEY|" "$dir/.env"
-        sed_inplace "s|API_MASTER_KEY=.*|API_MASTER_KEY=$API_KEY|" "$dir/.env"
+        # Handle API keys - update both if present
+        if grep -q "^INTERNAL_API_KEY=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "INTERNAL_API_KEY" "$API_KEY"
+        fi
+        if grep -q "^API_MASTER_KEY=" "$dir/.env"; then
+            safe_replace_env_var "$dir/.env" "API_MASTER_KEY" "$API_KEY"
+        fi
 
         print_success "$service_name configured (Port: $port)"
     done
