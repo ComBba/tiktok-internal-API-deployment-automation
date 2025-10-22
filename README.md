@@ -70,21 +70,31 @@ cd tiktok-internal-API-deployment-automation
 
 ## 📁 Repository Structure
 
+**After cloning this repo and running deployment:**
 ```
-deployment-automation/
-├── bootstrap.sh              # Server initialization
-├── setup-github.sh           # GitHub authentication setup
-├── clone-repositories.sh     # Repository cloning
-├── deploy-services.sh        # Service deployment
-├── health-check.sh           # Health monitoring
-├── config/
-│   ├── repositories.conf     # Repository list
-│   ├── services.conf         # Service configuration
-│   ├── .env.common.template  # Common environment variables
-│   ├── .env.production.template
-│   └── .env.test.template
-└── README.md                 # This file
+your-workspace/
+├── tiktok-internal-API-deployment-automation/  # This repository
+│   ├── bootstrap.sh              # Server initialization
+│   ├── setup-github.sh           # GitHub authentication setup
+│   ├── clone-repositories.sh     # Repository cloning
+│   ├── deploy-services.sh        # Service deployment
+│   ├── health-check.sh           # Health monitoring
+│   ├── start.sh                  # All-in-one deployment
+│   ├── config/
+│   │   ├── repositories.conf     # Repository list
+│   │   ├── services.conf         # Service configuration
+│   │   ├── .env.common.template  # Common environment variables
+│   │   ├── .env.production.template
+│   │   └── .env.test.template
+│   └── README.md                 # This file
+│
+├── tiktok-user-posts/           # Service 1 (cloned here)
+├── tiktok-user-info/            # Service 2 (cloned here)
+├── tiktok-post-detail/          # Service 3 (cloned here)
+└── tiktok-search-users/         # Service 4 (cloned here)
 ```
+
+**Note**: Services are cloned to the **parent directory** of this repo, not inside it.
 
 ## 🛠️ Script Documentation
 
@@ -176,7 +186,8 @@ Clones all service repositories based on `config/repositories.conf`.
 Edit `config/repositories.conf`:
 ```
 # Format: REPO_URL BRANCH TARGET_DIR
-git@github.com:ComBba/tiktok-user-posts.git main $HOME/github/tiktok-user-posts
+# Paths are relative to parent directory
+git@github.com:ComBba/tiktok-user-posts.git main ../tiktok-user-posts
 ```
 
 ### 4. deploy-services.sh - Service Deployment
@@ -270,10 +281,11 @@ Edit `config/repositories.conf` to customize repositories:
 
 ```bash
 # Format: REPO_URL BRANCH TARGET_DIR
-git@github.com:ComBba/tiktok-user-posts.git main ~/github/tiktok-user-posts
-git@github.com:ComBba/tiktok-user-info.git main ~/github/tiktok-user-info
-git@github.com:ComBba/tiktok-post-detail.git main ~/github/tiktok-post-detail
-git@github.com:ComBba/tiktok-search-users.git main ~/github/tiktok-search-users
+# Services are cloned to parent directory (relative paths)
+git@github.com:ComBba/tiktok-user-posts.git main ../tiktok-user-posts
+git@github.com:ComBba/tiktok-user-info.git main ../tiktok-user-info
+git@github.com:ComBba/tiktok-post-detail.git main ../tiktok-post-detail
+git@github.com:ComBba/tiktok-search-users.git main ../tiktok-search-users
 ```
 
 ### Services Configuration
@@ -282,10 +294,11 @@ Edit `config/services.conf` to customize services:
 
 ```bash
 # Format: SERVICE_NAME PORT DIRECTORY HEALTH_ENDPOINT
-user-info 8082 ~/github/tiktok-user-info /health
-user-posts 8083 ~/github/tiktok-user-posts /health
-search-users 8084 ~/github/tiktok-search-users /health
-post-detail 8085 ~/github/tiktok-post-detail /health
+# Services are in parent directory (relative paths)
+user-info 8082 ../tiktok-user-info /health
+user-posts 8083 ../tiktok-user-posts /health
+search-users 8084 ../tiktok-search-users /health
+post-detail 8085 ../tiktok-post-detail /health
 ```
 
 ### Environment Variables
@@ -363,11 +376,11 @@ DEBUG=true
 
 ```bash
 # View logs for specific service
-cd ~/github/tiktok-user-posts
+cd ../tiktok-user-posts
 docker-compose logs -f
 
-# Follow logs for all services
-for dir in ~/github/tiktok-*/; do
+# Follow logs for all services (from deployment-automation directory)
+for dir in ../tiktok-*/; do
   echo "=== $(basename $dir) ==="
   cd "$dir" && docker-compose logs --tail=50
 done
@@ -415,7 +428,7 @@ cat ~/.ssh/id_rsa_github.pub
 **Problem:** Service fails to start
 ```bash
 # Check logs
-cd ~/github/SERVICE_DIR
+cd ../SERVICE_DIR
 docker-compose logs
 
 # Check .env file
@@ -461,7 +474,7 @@ sudo kill -9 PID
 
 ```bash
 # Pull latest changes
-cd ~/github/tiktok-user-posts
+cd ../tiktok-user-posts
 git pull origin main
 
 # Rebuild and restart
@@ -480,11 +493,11 @@ docker-compose up -d
 ### Backup
 
 ```bash
-# Backup .env files
-tar -czf env-backup-$(date +%Y%m%d).tar.gz ~/github/*/.env
+# Backup .env files (from parent directory)
+cd .. && tar -czf env-backup-$(date +%Y%m%d).tar.gz tiktok-*/.env
 
-# Backup logs
-tar -czf logs-backup-$(date +%Y%m%d).tar.gz ~/github/*/logs/
+# Backup logs (from parent directory)
+cd .. && tar -czf logs-backup-$(date +%Y%m%d).tar.gz tiktok-*/logs/
 ```
 
 ## 📝 Workflow Examples
@@ -531,7 +544,7 @@ cd tiktok-internal-API-deployment-automation
 ./clone-repositories.sh --parallel
 
 # 2. Configure production environment
-for dir in ~/github/tiktok-*/; do
+for dir in ../tiktok-*/; do
   cp config/.env.production.template "$dir/.env"
   # Edit .env with production values
   nano "$dir/.env"

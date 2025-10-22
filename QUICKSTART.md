@@ -138,14 +138,14 @@ ssh -T git@github.com
 ### Issue: Service won't start
 ```bash
 # Solution: Check .env file exists
-ls ~/github/tiktok-user-posts/.env
+ls ../tiktok-user-posts/.env
 # If missing, run: ./deploy-services.sh --setup-env
 ```
 
 ### Issue: Health check fails
 ```bash
 # Solution: Check Docker logs
-cd ~/github/SERVICE_NAME
+cd ../SERVICE_NAME
 docker-compose logs
 ```
 

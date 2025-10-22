@@ -658,7 +658,7 @@ display_next_steps() {
     echo "     ./health-check.sh"
     echo ""
     echo "  2. View service logs:"
-    echo "     cd ~/github/SERVICE_DIR && docker-compose logs -f"
+    echo "     cd ../SERVICE_DIR && docker-compose logs -f"
     echo ""
     echo "  3. Test API endpoints:"
     echo "     curl http://localhost:8082/health  # User Info"

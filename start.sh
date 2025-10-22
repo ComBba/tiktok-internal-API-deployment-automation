@@ -391,7 +391,7 @@ print_summary() {
     echo -e "${YELLOW}📚 Useful Commands:${NC}"
     echo "  • Check health:        ./health-check.sh"
     echo "  • Watch live status:   ./health-check.sh --watch"
-    echo "  • View logs:           cd ~/github/SERVICE_DIR && docker-compose logs -f"
+    echo "  • View logs:           cd ../SERVICE_DIR && docker-compose logs -f"
     echo "  • Restart service:     ./deploy-services.sh --restart SERVICE_NAME"
     echo "  • Stop all:            ./deploy-services.sh --stop"
     echo ""
