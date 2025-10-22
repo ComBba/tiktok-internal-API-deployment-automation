@@ -58,6 +58,18 @@ print_info() {
     echo -e "${BLUE}ℹ️  $1${NC}"
 }
 
+# Cross-platform sed in-place function
+# macOS (BSD sed) requires -i '', Linux (GNU sed) accepts -i
+sed_inplace() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS (BSD sed)
+        sed -i '' "$@"
+    else
+        # Linux (GNU sed)
+        sed -i "$@"
+    fi
+}
+
 # =============================================================================
 # Help Function
 # =============================================================================
@@ -250,12 +262,12 @@ interactive_env_setup() {
         # Copy template
         cp "$TEMPLATE" "$dir/.env"
 
-        # Replace values
-        sed -i "s/PORT=XXXX/PORT=$port/" "$dir/.env"
-        sed -i "s|MONGO_URI=.*|MONGO_URI=$MONGO_URI|" "$dir/.env"
-        sed -i "s/MONGO_DB=.*/MONGO_DB=$MONGO_DB/" "$dir/.env"
-        sed -i "s/INTERNAL_API_KEY=.*/INTERNAL_API_KEY=$API_KEY/" "$dir/.env"
-        sed -i "s/API_MASTER_KEY=.*/API_MASTER_KEY=$API_KEY/" "$dir/.env"
+        # Replace values (using cross-platform sed_inplace function)
+        sed_inplace "s/PORT=XXXX/PORT=$port/" "$dir/.env"
+        sed_inplace "s|MONGO_URI=.*|MONGO_URI=$MONGO_URI|" "$dir/.env"
+        sed_inplace "s/MONGO_DB=.*/MONGO_DB=$MONGO_DB/" "$dir/.env"
+        sed_inplace "s/INTERNAL_API_KEY=.*/INTERNAL_API_KEY=$API_KEY/" "$dir/.env"
+        sed_inplace "s/API_MASTER_KEY=.*/API_MASTER_KEY=$API_KEY/" "$dir/.env"
 
         print_success "$service_name configured (Port: $port)"
     done
