@@ -91,7 +91,7 @@ ${YELLOW}ESTIMATED TIME:${NC}
 ${YELLOW}REQUIREMENTS:${NC}
   • Ubuntu 20.04+ / Debian 10+ / macOS 11+
   • sudo permissions (Linux) or admin access (macOS)
-  • macOS: Docker Desktop installed and running
+  • macOS: Homebrew auto-installs (Docker CLI + Colima)
   • GitHub repository access
   • RapidAPI key ready
 

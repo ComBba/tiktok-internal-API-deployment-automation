@@ -66,7 +66,7 @@ cd tiktok-internal-API-deployment-automation
 - **User Permissions**: sudo access (Linux) or admin access (macOS)
 - **Network**: Ports 8082-8085 available
 - **GitHub Access**: SSH key or Personal Access Token
-- **macOS Only**: Docker Desktop installed and running
+- **macOS**: Homebrew will be auto-installed if needed (for Docker CLI + Colima)
 
 ## 📁 Repository Structure
 
@@ -108,10 +108,8 @@ Prepares a new server with all required dependencies.
 ```
 
 **What it installs:**
-- Docker CE (latest)
-- Docker Compose
-- Git
-- curl, wget, jq, net-tools
+- **Linux**: Docker CE, Docker Compose, Git, curl, wget, jq, net-tools
+- **macOS**: Homebrew (if needed), Docker CLI, Docker Compose, Colima, Git (Xcode CLI Tools), curl, wget, jq
 
 ### 2. setup-github.sh - GitHub Authentication
 

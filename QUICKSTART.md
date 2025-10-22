@@ -7,7 +7,7 @@ Single-page deployment guide for new servers.
 - Ubuntu 20.04+ / Debian 10+ / macOS 11+
 - sudo access (Linux) or admin access (macOS)
 - GitHub account with repository access
-- macOS: Docker Desktop installed
+- Internet connection (Homebrew auto-installs on macOS)
 
 ## ⭐ All-in-One Deployment (Easiest)
 

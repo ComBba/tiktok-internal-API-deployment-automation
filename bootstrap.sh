@@ -193,26 +193,70 @@ install_docker() {
         return 0
     fi
 
-    # MacOS Docker Installation
+    # MacOS Docker Installation (using Colima)
     if [[ "$OS" == "macos" ]]; then
-        print_warning "Docker Desktop is required for macOS"
-        print_info "Please install Docker Desktop manually:"
-        echo ""
-        echo "  1. Download Docker Desktop for Mac:"
-        echo "     https://www.docker.com/products/docker-desktop/"
-        echo ""
-        echo "  2. Install Docker Desktop"
-        echo "  3. Start Docker Desktop from Applications"
-        echo "  4. Wait for Docker to start (you'll see a whale icon in the menu bar)"
-        echo ""
-        read -p "Press Enter after Docker Desktop is installed and running..."
+        print_info "Installing Docker CLI and Colima for macOS..."
 
-        # Verify Docker is running
-        if command -v docker &> /dev/null && docker ps &> /dev/null; then
-            print_success "Docker is running!"
+        # Check if Homebrew is installed
+        if ! command -v brew &> /dev/null; then
+            print_warning "Homebrew is required for Docker installation"
+            print_info "Installing Homebrew..."
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+            # Add Homebrew to PATH for Apple Silicon
+            if [[ -d "/opt/homebrew/bin" ]]; then
+                eval "$(/opt/homebrew/bin/brew shellenv)"
+            fi
+        fi
+
+        # Install Docker CLI
+        if ! command -v docker &> /dev/null; then
+            print_info "Installing Docker CLI..."
+            brew install docker
+        fi
+
+        # Install Docker Compose
+        if ! command -v docker-compose &> /dev/null; then
+            print_info "Installing Docker Compose..."
+            brew install docker-compose
+        fi
+
+        # Install Colima
+        if ! command -v colima &> /dev/null; then
+            print_info "Installing Colima (container runtime)..."
+            brew install colima
+        fi
+
+        # Start Colima if not running
+        if ! colima status &> /dev/null; then
+            print_info "Starting Colima..."
+            colima start --cpu 4 --memory 8 --disk 60
+
+            # Wait for Colima to be ready
+            print_info "Waiting for Colima to start (this may take 1-2 minutes)..."
+            local max_attempts=30
+            local attempt=0
+            while ! docker ps &> /dev/null && [ $attempt -lt $max_attempts ]; do
+                sleep 2
+                attempt=$((attempt + 1))
+            done
+
+            if docker ps &> /dev/null; then
+                print_success "Colima started successfully!"
+            else
+                print_error "Failed to start Colima. Please run 'colima start' manually."
+                exit 1
+            fi
+        else
+            print_success "Colima is already running"
+        fi
+
+        # Verify Docker is working
+        if docker ps &> /dev/null; then
+            print_success "Docker is ready!"
             return 0
         else
-            print_error "Docker is not running. Please start Docker Desktop and try again."
+            print_error "Docker is not working. Please check Colima status with 'colima status'."
             exit 1
         fi
     fi
@@ -277,9 +321,14 @@ install_docker_compose() {
         return 0
     fi
 
-    # MacOS - Docker Desktop includes Docker Compose
+    # MacOS - Docker Compose already installed via Homebrew
     if [[ "$OS" == "macos" ]]; then
-        print_success "Docker Compose is included in Docker Desktop"
+        if command -v docker-compose &> /dev/null; then
+            COMPOSE_VERSION=$(docker-compose --version | cut -d ' ' -f4 | cut -d ',' -f1)
+            print_success "Docker Compose already installed (version: $COMPOSE_VERSION)"
+        else
+            print_success "Docker Compose will be installed with Docker CLI"
+        fi
         return 0
     fi
 
