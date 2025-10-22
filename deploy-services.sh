@@ -207,14 +207,47 @@ apply_configuration_from_cache() {
         local port=${cached_ports[$idx]}
         print_info "Configuring $service_name (Port: $port)..."
 
+        # Check if .env already exists
+        if [[ -f "$dir/.env" ]]; then
+            print_warning "$service_name: .env file already exists (backing up)"
+            local backup_file="$dir/.env.backup.$(date +%Y%m%d_%H%M%S)"
+            mv "$dir/.env" "$backup_file"
+            print_info "Backed up to: $(basename $backup_file)"
+        fi
+
+        # Use service's .env.example if it exists, otherwise use our template
+        local source_template=""
+        if [[ -f "$dir/.env.example" ]]; then
+            source_template="$dir/.env.example"
+            print_info "Using service's .env.example"
+        else
+            source_template="$TEMPLATE"
+            print_info "Using deployment template"
+        fi
+
         # Copy template
-        cp "$TEMPLATE" "$dir/.env"
+        cp "$source_template" "$dir/.env"
+
+        # Detect environment variable naming convention from the copied file
+        local uses_mongodb_uri=false
+        if grep -q "MONGODB_URI" "$dir/.env"; then
+            uses_mongodb_uri=true
+        fi
 
         # Replace values (using cross-platform sed_inplace function)
         # Use | as delimiter to avoid conflicts with special chars in values
-        sed_inplace "s|PORT=XXXX|PORT=$port|" "$dir/.env"
-        sed_inplace "s|MONGO_URI=.*|MONGO_URI=$MONGO_URI|" "$dir/.env"
-        sed_inplace "s|MONGO_DB=.*|MONGO_DB=$MONGO_DB|" "$dir/.env"
+        sed_inplace "s|PORT=.*|PORT=$port|" "$dir/.env"
+
+        if [[ "$uses_mongodb_uri" == true ]]; then
+            # Service uses MONGODB_URI naming
+            sed_inplace "s|MONGODB_URI=.*|MONGODB_URI=$MONGO_URI|" "$dir/.env"
+            sed_inplace "s|MONGODB_DATABASE=.*|MONGODB_DATABASE=$MONGO_DB|" "$dir/.env"
+        else
+            # Service uses MONGO_URI naming
+            sed_inplace "s|MONGO_URI=.*|MONGO_URI=$MONGO_URI|" "$dir/.env"
+            sed_inplace "s|MONGO_DB=.*|MONGO_DB=$MONGO_DB|" "$dir/.env"
+        fi
+
         sed_inplace "s|INTERNAL_API_KEY=.*|INTERNAL_API_KEY=$API_KEY|" "$dir/.env"
         sed_inplace "s|API_MASTER_KEY=.*|API_MASTER_KEY=$API_KEY|" "$dir/.env"
 
@@ -542,14 +575,70 @@ interactive_env_setup() {
 
         print_info "Configuring $service_name (Port: $port)..."
 
+        # Check if .env already exists
+        if [[ -f "$dir/.env" ]]; then
+            print_warning "$service_name: .env file already exists"
+            echo ""
+            echo "Options:"
+            echo "  1) Backup and recreate (recommended)"
+            echo "  2) Skip (keep existing .env)"
+            echo "  3) Overwrite without backup"
+            read -p "Enter choice (1/2/3): " env_choice
+
+            case $env_choice in
+                1)
+                    local backup_file="$dir/.env.backup.$(date +%Y%m%d_%H%M%S)"
+                    mv "$dir/.env" "$backup_file"
+                    print_success "Backed up to: $(basename $backup_file)"
+                    ;;
+                2)
+                    print_info "Skipping $service_name (keeping existing .env)"
+                    continue
+                    ;;
+                3)
+                    print_warning "Overwriting existing .env"
+                    ;;
+                *)
+                    print_error "Invalid choice, skipping $service_name"
+                    continue
+                    ;;
+            esac
+            echo ""
+        fi
+
+        # Use service's .env.example if it exists, otherwise use our template
+        local source_template=""
+        if [[ -f "$dir/.env.example" ]]; then
+            source_template="$dir/.env.example"
+            print_info "Using service's .env.example"
+        else
+            source_template="$TEMPLATE"
+            print_info "Using deployment template"
+        fi
+
         # Copy template
-        cp "$TEMPLATE" "$dir/.env"
+        cp "$source_template" "$dir/.env"
+
+        # Detect environment variable naming convention from the copied file
+        local uses_mongodb_uri=false
+        if grep -q "MONGODB_URI" "$dir/.env"; then
+            uses_mongodb_uri=true
+        fi
 
         # Replace values (using cross-platform sed_inplace function)
         # Use | as delimiter to avoid conflicts with special chars in values
-        sed_inplace "s|PORT=XXXX|PORT=$port|" "$dir/.env"
-        sed_inplace "s|MONGO_URI=.*|MONGO_URI=$MONGO_URI|" "$dir/.env"
-        sed_inplace "s|MONGO_DB=.*|MONGO_DB=$MONGO_DB|" "$dir/.env"
+        sed_inplace "s|PORT=.*|PORT=$port|" "$dir/.env"
+
+        if [[ "$uses_mongodb_uri" == true ]]; then
+            # Service uses MONGODB_URI naming
+            sed_inplace "s|MONGODB_URI=.*|MONGODB_URI=$MONGO_URI|" "$dir/.env"
+            sed_inplace "s|MONGODB_DATABASE=.*|MONGODB_DATABASE=$MONGO_DB|" "$dir/.env"
+        else
+            # Service uses MONGO_URI naming
+            sed_inplace "s|MONGO_URI=.*|MONGO_URI=$MONGO_URI|" "$dir/.env"
+            sed_inplace "s|MONGO_DB=.*|MONGO_DB=$MONGO_DB|" "$dir/.env"
+        fi
+
         sed_inplace "s|INTERNAL_API_KEY=.*|INTERNAL_API_KEY=$API_KEY|" "$dir/.env"
         sed_inplace "s|API_MASTER_KEY=.*|API_MASTER_KEY=$API_KEY|" "$dir/.env"
 
