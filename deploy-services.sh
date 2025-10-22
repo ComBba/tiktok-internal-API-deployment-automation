@@ -70,6 +70,16 @@ sed_inplace() {
     fi
 }
 
+# Docker Compose command wrapper
+# Supports both docker-compose (v1) and docker compose (v2)
+docker_compose() {
+    if command -v docker-compose &> /dev/null; then
+        docker-compose "$@"
+    else
+        docker compose "$@"
+    fi
+}
+
 # =============================================================================
 # Help Function
 # =============================================================================
@@ -616,7 +626,7 @@ build_service() {
 
     cd "$service_dir"
 
-    if docker-compose build &> /tmp/build_${service_name}.log; then
+    if docker_compose build &> /tmp/build_${service_name}.log; then
         print_success "$service_name: Build completed"
         return 0
     else
@@ -634,7 +644,7 @@ start_service() {
 
     cd "$service_dir"
 
-    if docker-compose up -d &> /tmp/start_${service_name}.log; then
+    if docker_compose up -d &> /tmp/start_${service_name}.log; then
         print_success "$service_name: Started successfully"
         return 0
     else
@@ -786,7 +796,7 @@ stop_all_services() {
         if [[ -d "$directory" ]]; then
             print_info "Stopping $service_name..."
             cd "$directory"
-            docker-compose down > /dev/null 2>&1 || true
+            docker_compose down > /dev/null 2>&1 || true
             print_success "$service_name stopped"
         fi
 
@@ -812,7 +822,7 @@ restart_service() {
             # Stop service
             print_info "Stopping $service_name..."
             cd "$directory"
-            docker-compose down > /dev/null 2>&1 || true
+            docker_compose down > /dev/null 2>&1 || true
 
             # Deploy service
             deploy_service "$service_name" "$port" "$directory" "$health_endpoint"
@@ -862,7 +872,7 @@ display_next_steps() {
     echo "     ./health-check.sh"
     echo ""
     echo "  2. View service logs:"
-    echo "     cd ../SERVICE_DIR && docker-compose logs -f"
+    echo "     cd ../SERVICE_DIR && docker compose logs -f"
     echo ""
     echo "  3. Test API endpoints:"
     echo "     curl http://localhost:8082/health  # User Info"
