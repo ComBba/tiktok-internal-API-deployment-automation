@@ -160,7 +160,7 @@ print_progress() {
 wait_user() {
     if [[ "$NON_INTERACTIVE" == false ]]; then
         echo ""
-        read -p "Press Enter to continue or Ctrl+C to cancel..." -r
+        read -p "Press Enter to continue or Ctrl+C to cancel..." -r || true
         echo ""
     fi
 }
@@ -170,7 +170,7 @@ wait_user() {
 # =============================================================================
 
 step_bootstrap() {
-    ((CURRENT_STEP++))
+    ((++CURRENT_STEP))
     print_step_header $CURRENT_STEP "Bootstrap Server" "Installing Docker, Git, and configuring firewall"
 
     if [[ "$SKIP_BOOTSTRAP" == true ]]; then
@@ -201,7 +201,7 @@ step_bootstrap() {
 # =============================================================================
 
 step_github_setup() {
-    ((CURRENT_STEP++))
+    ((++CURRENT_STEP))
     print_step_header $CURRENT_STEP "GitHub Authentication" "Configuring GitHub access for repository cloning"
 
     if [[ "$SKIP_GITHUB" == true ]]; then
@@ -212,7 +212,7 @@ step_github_setup() {
     # Check if already configured
     if ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
         print_success "GitHub SSH already configured!"
-        read -p "Reconfigure GitHub authentication? (y/N): " -n 1 -r
+        read -p "Reconfigure GitHub authentication? (y/N): " -n 1 -r || true
         echo ""
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             print_info "Using existing GitHub configuration"
@@ -237,7 +237,7 @@ step_github_setup() {
 # =============================================================================
 
 step_clone_repositories() {
-    ((CURRENT_STEP++))
+    ((++CURRENT_STEP))
     print_step_header $CURRENT_STEP "Clone Repositories" "Cloning all 4 TikTok Internal API service repositories"
 
     # Check if repositories.conf is configured
@@ -249,7 +249,7 @@ step_clone_repositories() {
         echo ""
 
         if [[ "$NON_INTERACTIVE" == false ]]; then
-            read -p "Enter your GitHub username: " github_username
+            read -p "Enter your GitHub username: " github_username || true
 
             if [[ -n "$github_username" ]]; then
                 sed -i "s/YOUR_GITHUB_USERNAME/$github_username/g" "$SCRIPT_DIR/config/repositories.conf"
@@ -285,7 +285,7 @@ step_clone_repositories() {
 # =============================================================================
 
 step_configure_environment() {
-    ((CURRENT_STEP++))
+    ((++CURRENT_STEP))
     print_step_header $CURRENT_STEP "Configure Environment" "Setting up environment variables and ports"
 
     print_info "This will guide you through environment configuration:"
@@ -309,7 +309,7 @@ step_configure_environment() {
 # =============================================================================
 
 step_deploy_services() {
-    ((CURRENT_STEP++))
+    ((++CURRENT_STEP))
     print_step_header $CURRENT_STEP "Deploy Services" "Building and starting all Docker containers"
 
     print_info "Deploying 4 services:"
@@ -340,7 +340,7 @@ step_deploy_services() {
 # =============================================================================
 
 step_health_check() {
-    ((CURRENT_STEP++))
+    ((++CURRENT_STEP))
     print_step_header $CURRENT_STEP "Health Check" "Verifying all services are running and healthy"
 
     print_info "Waiting 10 seconds for services to stabilize..."
@@ -455,7 +455,7 @@ main() {
     if [[ "$NON_INTERACTIVE" == false ]]; then
         echo "You can press Ctrl+C at any time to cancel."
         echo ""
-        read -p "Ready to start? (Y/n): " -n 1 -r
+        read -p "Ready to start? (Y/n): " -n 1 -r || true
         echo ""
         if [[ $REPLY =~ ^[Nn]$ ]]; then
             print_warning "Deployment cancelled"
@@ -473,7 +473,7 @@ main() {
         step_clone_repositories
     else
         print_warning "Skipping repository cloning (--skip-clone)"
-        ((CURRENT_STEP++))
+        ((++CURRENT_STEP))
     fi
 
     step_configure_environment
