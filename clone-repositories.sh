@@ -111,6 +111,38 @@ EOF
 }
 
 # =============================================================================
+# Input Validation
+# =============================================================================
+
+validate_config_line() {
+    local repo_url=$1
+    local branch=$2
+    local target_dir=$3
+
+    # Validate repo URL format (GitHub only)
+    if ! [[ "$repo_url" =~ ^(https://|git@)github\.com[:/][A-Za-z0-9_-]+/[A-Za-z0-9_-]+\.git$ ]]; then
+        print_error "Invalid repository URL: $repo_url"
+        print_info "Expected format: git@github.com:user/repo.git or https://github.com/user/repo.git"
+        return 1
+    fi
+
+    # Validate branch name (alphanumeric, dash, underscore, slash)
+    if ! [[ "$branch" =~ ^[A-Za-z0-9/_-]+$ ]]; then
+        print_error "Invalid branch name: $branch"
+        return 1
+    fi
+
+    # Validate target directory (no dangerous characters)
+    if [[ "$target_dir" =~ [\$\`\;\|\&] ]]; then
+        print_error "Invalid target directory: $target_dir"
+        print_info "Directory path contains dangerous characters"
+        return 1
+    fi
+
+    return 0
+}
+
+# =============================================================================
 # Configuration Loading
 # =============================================================================
 
@@ -190,6 +222,12 @@ clone_all_parallel() {
         # Parse line: REPO_URL BRANCH TARGET_DIR
         read -r repo_url branch target_dir <<< "$line"
 
+        # Validate input
+        if ! validate_config_line "$repo_url" "$branch" "$target_dir"; then
+            print_warning "Skipping invalid config line"
+            continue
+        fi
+
         # Clone in background
         (clone_repository "$repo_url" "$branch" "$target_dir") &
         pids+=($!)
@@ -218,6 +256,12 @@ clone_all_sequential() {
 
         # Parse line: REPO_URL BRANCH TARGET_DIR
         read -r repo_url branch target_dir <<< "$line"
+
+        # Validate input
+        if ! validate_config_line "$repo_url" "$branch" "$target_dir"; then
+            print_warning "Skipping invalid config line"
+            continue
+        fi
 
         clone_repository "$repo_url" "$branch" "$target_dir"
 
