@@ -64,6 +64,53 @@ print_info() {
 }
 
 # =============================================================================
+# Dependency Checks
+# =============================================================================
+
+check_dependencies() {
+    local missing_deps=()
+
+    # Check for curl
+    if ! command -v curl &> /dev/null; then
+        missing_deps+=("curl")
+    fi
+
+    # Check for docker
+    if ! command -v docker &> /dev/null; then
+        missing_deps+=("docker")
+    fi
+
+    # Check for docker-compose (try both v1 and v2)
+    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+        missing_deps+=("docker-compose")
+    fi
+
+    # Report missing dependencies
+    if [[ ${#missing_deps[@]} -gt 0 ]]; then
+        print_error "Missing required dependencies: ${missing_deps[*]}"
+        echo ""
+        print_info "Please install the missing dependencies:"
+        for dep in "${missing_deps[@]}"; do
+            case $dep in
+                curl)
+                    echo "  • curl: sudo apt-get install curl (Debian/Ubuntu)"
+                    echo "          brew install curl (macOS)"
+                    ;;
+                docker)
+                    echo "  • docker: https://docs.docker.com/engine/install/"
+                    ;;
+                docker-compose)
+                    echo "  • docker-compose: sudo apt-get install docker-compose (Debian/Ubuntu)"
+                    echo "                    brew install docker-compose (macOS)"
+                    ;;
+            esac
+        done
+        echo ""
+        exit 1
+    fi
+}
+
+# =============================================================================
 # Help Function
 # =============================================================================
 
@@ -431,6 +478,9 @@ main() {
                 ;;
         esac
     done
+
+    # Check dependencies
+    check_dependencies
 
     # Check if config file exists
     if [[ ! -f "$CONFIG_FILE" ]]; then
