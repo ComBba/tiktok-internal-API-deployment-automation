@@ -32,6 +32,21 @@ SUCCESS_COUNT=0
 SKIP_COUNT=0
 FAIL_COUNT=0
 
+# Temporary files tracking
+declare -a TEMP_LOG_FILES=()
+
+# Cleanup function for temporary files
+cleanup_temp_files() {
+    for temp_file in "${TEMP_LOG_FILES[@]}"; do
+        if [[ -f "$temp_file" ]]; then
+            rm -f "$temp_file" 2>/dev/null || true
+        fi
+    done
+}
+
+# Register cleanup on exit
+trap cleanup_temp_files EXIT
+
 # =============================================================================
 # Utility Functions
 # =============================================================================
@@ -192,13 +207,17 @@ clone_repository() {
     # Clone repository
     print_info "Cloning $repo_name..."
 
-    if git clone --branch "$branch" "$repo_url" "$target_dir" &> /tmp/clone_${repo_name}.log; then
+    # Create secure temporary log file
+    local temp_log=$(mktemp "${TMPDIR:-/tmp}/clone_${repo_name}_XXXXXX.log")
+    TEMP_LOG_FILES+=("$temp_log")
+
+    if git clone --branch "$branch" "$repo_url" "$target_dir" &> "$temp_log"; then
         print_success "$repo_name cloned successfully"
         ((++SUCCESS_COUNT))
         return 0
     else
         print_error "Failed to clone $repo_name"
-        print_info "See log: /tmp/clone_${repo_name}.log"
+        print_info "See log: $temp_log"
         ((++FAIL_COUNT))
         return 1
     fi
