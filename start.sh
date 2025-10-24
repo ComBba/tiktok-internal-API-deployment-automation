@@ -38,6 +38,41 @@ PARALLEL=true
 CURRENT_STEP=0
 TOTAL_STEPS=6
 
+# Lock file for preventing concurrent execution
+LOCK_FILE="$SCRIPT_DIR/.start.lock"
+
+# =============================================================================
+# Concurrency Control
+# =============================================================================
+
+acquire_lock() {
+    # Check if lock file exists
+    if [[ -f "$LOCK_FILE" ]]; then
+        local lock_pid=$(cat "$LOCK_FILE" 2>/dev/null)
+
+        # Check if the process is still running
+        if [[ -n "$lock_pid" ]] && kill -0 "$lock_pid" 2>/dev/null; then
+            print_error "Another instance of start.sh is already running (PID: $lock_pid)"
+            print_info "If you're sure no other instance is running, remove: $LOCK_FILE"
+            exit 1
+        else
+            # Stale lock file, remove it
+            print_warning "Removing stale lock file from previous run"
+            rm -f "$LOCK_FILE"
+        fi
+    fi
+
+    # Create lock file with current PID
+    echo $$ > "$LOCK_FILE"
+}
+
+release_lock() {
+    rm -f "$LOCK_FILE"
+}
+
+# Register lock cleanup on exit
+trap release_lock EXIT
+
 # =============================================================================
 # Help Function
 # =============================================================================
@@ -462,6 +497,9 @@ main() {
                 ;;
         esac
     done
+
+    # Acquire lock to prevent concurrent execution
+    acquire_lock
 
     # Print banner
     print_banner
