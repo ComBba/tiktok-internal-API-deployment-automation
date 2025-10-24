@@ -200,7 +200,7 @@ clone_repository() {
         else
             print_warning "Directory already exists: $target_dir (skipped)"
             ((++SKIP_COUNT))
-            return 0
+            return 2  # Return code 2 for skip
         fi
     fi
 
@@ -214,12 +214,12 @@ clone_repository() {
     if git clone --branch "$branch" "$repo_url" "$target_dir" &> "$temp_log"; then
         print_success "$repo_name cloned successfully"
         ((++SUCCESS_COUNT))
-        return 0
+        return 0  # Return code 0 for success
     else
         print_error "Failed to clone $repo_name"
         print_info "See log: $temp_log"
         ((++FAIL_COUNT))
-        return 1
+        return 1  # Return code 1 for failure
     fi
 }
 
@@ -231,6 +231,12 @@ clone_all_parallel() {
     print_header "Cloning Repositories (Parallel Mode)"
 
     local pids=()
+    declare -a exit_codes=()
+
+    # Reset counters (they'll be incremented in subshells, but we'll recount)
+    local parallel_success=0
+    local parallel_skip=0
+    local parallel_fail=0
 
     # Read configuration and start cloning in background
     while IFS= read -r line || [[ -n "$line" ]]; do
@@ -253,12 +259,26 @@ clone_all_parallel() {
 
     done < "$CONFIG_FILE"
 
-    # Wait for all background processes
+    # Wait for all background processes and collect exit codes
     print_info "Waiting for all cloning operations to complete..."
 
     for pid in "${pids[@]}"; do
         wait $pid
+        local exit_code=$?
+        exit_codes+=($exit_code)
+
+        # Count based on exit code
+        case $exit_code in
+            0) ((++parallel_success)) ;;
+            1) ((++parallel_fail)) ;;
+            2) ((++parallel_skip)) ;;
+        esac
     done
+
+    # Update global counters with parallel results
+    SUCCESS_COUNT=$parallel_success
+    SKIP_COUNT=$parallel_skip
+    FAIL_COUNT=$parallel_fail
 }
 
 # =============================================================================
