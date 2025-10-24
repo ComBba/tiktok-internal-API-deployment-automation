@@ -30,6 +30,7 @@ NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKIP_BOOTSTRAP=false
 SKIP_GITHUB=false
+SKIP_CLONE=false
 NON_INTERACTIVE=false
 PARALLEL=true
 

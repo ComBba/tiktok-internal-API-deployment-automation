@@ -164,10 +164,8 @@ check_docker_container() {
         return 1
     fi
 
-    cd "$service_dir"
-
-    # Get container name from docker-compose
-    local container_name=$(docker-compose ps -q 2>/dev/null | head -n1)
+    # Use -f flag instead of cd to avoid changing directory
+    local container_name=$(docker-compose -f "$service_dir/docker-compose.yml" ps -q 2>/dev/null | head -n1)
 
     if [[ -z "$container_name" ]]; then
         return 1
@@ -186,9 +184,8 @@ check_docker_container() {
 get_container_uptime() {
     local service_dir=$1
 
-    cd "$service_dir"
-
-    local container_name=$(docker-compose ps -q 2>/dev/null | head -n1)
+    # Use -f flag instead of cd to avoid changing directory
+    local container_name=$(docker-compose -f "$service_dir/docker-compose.yml" ps -q 2>/dev/null | head -n1)
 
     if [[ -z "$container_name" ]]; then
         echo "N/A"
@@ -338,6 +335,14 @@ check_all_services() {
 
         # Parse line
         read -r service_name port directory health_endpoint <<< "$line"
+
+        # Convert relative paths to absolute paths
+        if [[ ! "$directory" = /* ]]; then
+            directory="$(cd "$(dirname "$CONFIG_FILE")/$directory" 2>/dev/null && pwd)" || {
+                print_warning "Cannot resolve directory for $service_name: $directory"
+                continue
+            }
+        fi
 
         # Skip if specific service requested
         if [[ -n "$SPECIFIC_SERVICE" && "$service_name" != "$SPECIFIC_SERVICE" ]]; then
