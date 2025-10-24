@@ -101,6 +101,33 @@ check_network() {
 }
 
 # =============================================================================
+# Disk Space Check
+# =============================================================================
+
+check_disk_space() {
+    local required_gb=5
+    local required_kb=$((required_gb * 1024 * 1024))
+
+    # Get available space in KB for current directory
+    local available_kb=$(df -k "$SCRIPT_DIR" | awk 'NR==2 {print $4}')
+
+    if [[ $available_kb -lt $required_kb ]]; then
+        local available_gb=$(awk "BEGIN {printf \"%.1f\", $available_kb/1024/1024}")
+        print_error "Insufficient disk space"
+        print_info "Required: ${required_gb}GB"
+        print_info "Available: ${available_gb}GB"
+        echo ""
+        print_info "This script requires disk space for:"
+        print_info "  • Cloning 4 service repositories"
+        print_info "  • Building Docker images"
+        print_info "  • Running containers"
+        echo ""
+        print_info "Please free up disk space and try again"
+        exit 1
+    fi
+}
+
+# =============================================================================
 # Help Function
 # =============================================================================
 
@@ -530,6 +557,9 @@ main() {
 
     # Check network connectivity
     check_network
+
+    # Check disk space
+    check_disk_space
 
     # Print banner
     print_banner

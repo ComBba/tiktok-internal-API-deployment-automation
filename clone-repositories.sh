@@ -72,6 +72,33 @@ check_network() {
 }
 
 # =============================================================================
+# Disk Space Check
+# =============================================================================
+
+check_disk_space() {
+    local required_gb=2
+    local required_kb=$((required_gb * 1024 * 1024))
+
+    # Get available space in KB for target directory
+    local available_kb=$(df -k "$GITHUB_DIR" 2>/dev/null | awk 'NR==2 {print $4}')
+
+    # Fallback to parent directory if target doesn't exist yet
+    if [[ -z "$available_kb" ]]; then
+        available_kb=$(df -k "$(dirname "$GITHUB_DIR")" | awk 'NR==2 {print $4}')
+    fi
+
+    if [[ $available_kb -lt $required_kb ]]; then
+        local available_gb=$(awk "BEGIN {printf \"%.1f\", $available_kb/1024/1024}")
+        print_error "Insufficient disk space"
+        print_info "Required: ${required_gb}GB"
+        print_info "Available: ${available_gb}GB"
+        echo ""
+        print_info "Please free up disk space and try again"
+        exit 1
+    fi
+}
+
+# =============================================================================
 # Utility Functions
 # =============================================================================
 
@@ -455,6 +482,9 @@ main() {
 
     # Check network connectivity
     check_network
+
+    # Check disk space
+    check_disk_space
 
     # Load configuration
     load_config

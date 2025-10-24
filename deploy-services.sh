@@ -72,6 +72,28 @@ check_network() {
 }
 
 # =============================================================================
+# Disk Space Check
+# =============================================================================
+
+check_disk_space() {
+    local required_gb=3
+    local required_kb=$((required_gb * 1024 * 1024))
+
+    # Get available space in KB for current directory
+    local available_kb=$(df -k "$SCRIPT_DIR" | awk 'NR==2 {print $4}')
+
+    if [[ $available_kb -lt $required_kb ]]; then
+        local available_gb=$(awk "BEGIN {printf \"%.1f\", $available_kb/1024/1024}")
+        print_error "Insufficient disk space"
+        print_info "Required: ${required_gb}GB"
+        print_info "Available: ${available_gb}GB"
+        echo ""
+        print_info "Please free up disk space for Docker images and containers"
+        exit 1
+    fi
+}
+
+# =============================================================================
 # Utility Functions
 # =============================================================================
 
@@ -1112,6 +1134,9 @@ main() {
 
     # Check network connectivity
     check_network
+
+    # Check disk space
+    check_disk_space
 
     # Load configuration
     load_config
