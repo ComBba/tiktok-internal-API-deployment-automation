@@ -32,6 +32,21 @@ TOTAL_SERVICES=0
 SUCCESS_COUNT=0
 FAIL_COUNT=0
 
+# Temporary files tracking
+declare -a TEMP_LOG_FILES=()
+
+# Cleanup function for temporary files
+cleanup_temp_files() {
+    for temp_file in "${TEMP_LOG_FILES[@]}"; do
+        if [[ -f "$temp_file" ]]; then
+            rm -f "$temp_file" 2>/dev/null || true
+        fi
+    done
+}
+
+# Register cleanup on exit
+trap cleanup_temp_files EXIT
+
 # =============================================================================
 # Utility Functions
 # =============================================================================
@@ -763,12 +778,16 @@ build_service() {
 
     cd "$service_dir"
 
-    if docker_compose build &> /tmp/build_${service_name}.log; then
+    # Create secure temporary log file
+    local temp_log=$(mktemp "${TMPDIR:-/tmp}/build_${service_name}_XXXXXX.log")
+    TEMP_LOG_FILES+=("$temp_log")
+
+    if docker_compose build &> "$temp_log"; then
         print_success "$service_name: Build completed"
         return 0
     else
         print_error "$service_name: Build failed"
-        print_info "See log: /tmp/build_${service_name}.log"
+        print_info "See log: $temp_log"
         return 1
     fi
 }
@@ -781,12 +800,16 @@ start_service() {
 
     cd "$service_dir"
 
-    if docker_compose up -d &> /tmp/start_${service_name}.log; then
+    # Create secure temporary log file
+    local temp_log=$(mktemp "${TMPDIR:-/tmp}/start_${service_name}_XXXXXX.log")
+    TEMP_LOG_FILES+=("$temp_log")
+
+    if docker_compose up -d &> "$temp_log"; then
         print_success "$service_name: Started successfully"
         return 0
     else
         print_error "$service_name: Failed to start"
-        print_info "See log: /tmp/start_${service_name}.log"
+        print_info "See log: $temp_log"
         return 1
     fi
 }
@@ -988,7 +1011,7 @@ display_summary() {
 
     if [[ $FAIL_COUNT -gt 0 ]]; then
         print_warning "Some services failed to deploy"
-        print_info "Check logs in /tmp/build_*.log and /tmp/start_*.log"
+        print_info "Check error messages above for specific log file locations"
         return 1
     else
         print_success "All services deployed successfully!"
