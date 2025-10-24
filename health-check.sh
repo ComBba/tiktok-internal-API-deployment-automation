@@ -344,7 +344,7 @@ check_all_services() {
             continue
         fi
 
-        ((total++))
+        ((++total))
 
         if [[ "$JSON_OUTPUT" == true ]]; then
             if [[ "$first" == false ]]; then
@@ -354,9 +354,9 @@ check_all_services() {
         fi
 
         if check_service_health "$service_name" "$port" "$directory" "$health_endpoint"; then
-            ((healthy++))
+            ((++healthy))
         else
-            ((unhealthy++))
+            ((++unhealthy))
         fi
 
     done < "$CONFIG_FILE"

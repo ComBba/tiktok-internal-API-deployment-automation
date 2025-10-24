@@ -152,7 +152,7 @@ clone_repository() {
             rm -rf "$target_dir"
         else
             print_warning "Directory already exists: $target_dir (skipped)"
-            ((SKIP_COUNT++))
+            ((++SKIP_COUNT))
             return 0
         fi
     fi
@@ -162,12 +162,12 @@ clone_repository() {
 
     if git clone --branch "$branch" "$repo_url" "$target_dir" &> /tmp/clone_${repo_name}.log; then
         print_success "$repo_name cloned successfully"
-        ((SUCCESS_COUNT++))
+        ((++SUCCESS_COUNT))
         return 0
     else
         print_error "Failed to clone $repo_name"
         print_info "See log: /tmp/clone_${repo_name}.log"
-        ((FAIL_COUNT++))
+        ((++FAIL_COUNT))
         return 1
     fi
 }
@@ -249,14 +249,14 @@ verify_repositories() {
 
             if [[ "$current_branch" == "$branch" ]]; then
                 print_success "$repo_name: ✓ (branch: $branch)"
-                ((verified++))
+                ((++verified))
             else
                 print_warning "$repo_name: branch mismatch (expected: $branch, got: $current_branch)"
-                ((failed++))
+                ((++failed))
             fi
         else
             print_error "$repo_name: not found or not a git repository"
-            ((failed++))
+            ((++failed))
         fi
 
     done < "$CONFIG_FILE"

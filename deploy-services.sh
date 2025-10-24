@@ -216,7 +216,7 @@ apply_configuration_from_cache() {
 
         if [[ ! -d "$dir" ]]; then
             print_warning "$service_name: Directory not found, skipping"
-            ((idx++))
+            ((++idx))
             continue
         fi
 
@@ -274,7 +274,7 @@ apply_configuration_from_cache() {
         fi
 
         print_success "$service_name configured (Port: $port)"
-        ((idx++))
+        ((++idx))
     done
 
     # Update services.conf
@@ -321,7 +321,7 @@ EOF
         local service_name=$(basename "$dir")
 
         if [[ ! -d "$dir" ]]; then
-            ((idx++))
+            ((++idx))
             continue
         fi
 
@@ -347,7 +347,7 @@ EOF
         esac
 
         echo "$short_name $port $dir /health" >> "$CONFIG_FILE"
-        ((idx++))
+        ((++idx))
     done
 
     print_success "Service configuration updated"
@@ -366,7 +366,7 @@ EOF
             local port=${ports[$idx]}
             echo "  • $description: $port"
         fi
-        ((idx++))
+        ((++idx))
     done
     echo ""
 
@@ -584,7 +584,7 @@ interactive_env_setup() {
         save_cache "PORT_$idx" "$new_port"
         print_success "$service_name: Port $new_port"
         echo ""
-        ((idx++))
+        ((++idx))
     done
 
     # Apply to each service
@@ -790,7 +790,7 @@ wait_for_health() {
             return 0
         fi
 
-        ((attempt++))
+        ((++attempt))
         echo -n "."
         sleep 2
     done
@@ -815,19 +815,19 @@ deploy_service() {
     # Check environment
     if ! check_environment "$directory" "$service_name"; then
         print_error "$service_name: Environment check failed"
-        ((FAIL_COUNT++))
+        ((++FAIL_COUNT))
         return 1
     fi
 
     # Build service
     if ! build_service "$directory" "$service_name"; then
-        ((FAIL_COUNT++))
+        ((++FAIL_COUNT))
         return 1
     fi
 
     # Start service
     if ! start_service "$directory" "$service_name"; then
-        ((FAIL_COUNT++))
+        ((++FAIL_COUNT))
         return 1
     fi
 
@@ -837,7 +837,7 @@ deploy_service() {
         print_info "Check with: docker logs -f <container_name>"
     fi
 
-    ((SUCCESS_COUNT++))
+    ((++SUCCESS_COUNT))
     return 0
 }
 
