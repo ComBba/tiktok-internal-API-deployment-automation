@@ -48,6 +48,30 @@ cleanup_temp_files() {
 trap cleanup_temp_files EXIT
 
 # =============================================================================
+# Network Connectivity Check
+# =============================================================================
+
+check_network() {
+    local test_hosts=("github.com" "8.8.8.8")
+    local connected=false
+
+    for host in "${test_hosts[@]}"; do
+        if ping -c 1 -W 2 "$host" &> /dev/null; then
+            connected=true
+            break
+        fi
+    done
+
+    if [[ "$connected" == false ]]; then
+        print_error "No network connectivity detected"
+        print_info "This script requires internet access to download Docker images"
+        echo ""
+        print_info "Please check your network connection and try again"
+        exit 1
+    fi
+}
+
+# =============================================================================
 # Utility Functions
 # =============================================================================
 
@@ -1085,6 +1109,9 @@ main() {
                 ;;
         esac
     done
+
+    # Check network connectivity
+    check_network
 
     # Load configuration
     load_config
