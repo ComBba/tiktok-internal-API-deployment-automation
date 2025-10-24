@@ -255,23 +255,40 @@ clone_repository() {
         fi
     fi
 
-    # Clone repository
+    # Clone repository with retry logic
     print_info "Cloning $repo_name..."
 
     # Create secure temporary log file
     local temp_log=$(mktemp "${TMPDIR:-/tmp}/clone_${repo_name}_XXXXXX.log")
     TEMP_LOG_FILES+=("$temp_log")
 
-    if git clone --branch "$branch" "$repo_url" "$target_dir" &> "$temp_log"; then
-        print_success "$repo_name cloned successfully"
-        ((++SUCCESS_COUNT))
-        return 0  # Return code 0 for success
-    else
-        print_error "Failed to clone $repo_name"
-        print_info "See log: $temp_log"
-        ((++FAIL_COUNT))
-        return 1  # Return code 1 for failure
-    fi
+    local max_retries=3
+    local retry=0
+
+    while [[ $retry -lt $max_retries ]]; do
+        if git clone --branch "$branch" "$repo_url" "$target_dir" &> "$temp_log"; then
+            print_success "$repo_name cloned successfully"
+            ((++SUCCESS_COUNT))
+            return 0  # Return code 0 for success
+        fi
+
+        ((++retry))
+        if [[ $retry -lt $max_retries ]]; then
+            # Exponential backoff: 2^retry seconds
+            local wait_time=$((2 ** retry))
+            print_warning "$repo_name: Clone failed (attempt $retry/$max_retries), retrying in ${wait_time}s..."
+            sleep $wait_time
+
+            # Clean up partial clone if exists
+            rm -rf "$target_dir" 2>/dev/null || true
+        fi
+    done
+
+    # All retries exhausted
+    print_error "Failed to clone $repo_name after $max_retries attempts"
+    print_info "See log: $temp_log"
+    ((++FAIL_COUNT))
+    return 1  # Return code 1 for failure
 }
 
 # =============================================================================
