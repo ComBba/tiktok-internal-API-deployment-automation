@@ -443,9 +443,11 @@ interactive_env_setup() {
                         TEMPLATE="$SCRIPT_DIR/config/.env.test.template"
                     fi
 
-                    # Skip to port configuration if ports not cached
+                    # Check if ports are cached
                     if [[ -z "${cached_ports[0]}" ]]; then
                         print_info "Port configuration not found in cache, will prompt for ports..."
+                        # Jump to port configuration section, skip common config prompts
+                        SKIP_COMMON_CONFIG=true
                     else
                         # Use cached ports
                         print_success "Using cached configuration"
@@ -477,62 +479,67 @@ interactive_env_setup() {
         esac
     fi
 
-    # Ask for environment
-    echo "Select environment:"
-    echo "  1) Production"
-    echo "  2) Test"
-    read -p "Enter choice (1 or 2): " env_choice
+    # Ask for environment (skip if using cached config)
+    if [[ "$SKIP_COMMON_CONFIG" != true ]]; then
+        echo "Select environment:"
+        echo "  1) Production"
+        echo "  2) Test"
+        read -p "Enter choice (1 or 2): " env_choice
 
-    case $env_choice in
-        1)
-            ENV_TYPE="production"
-            TEMPLATE="$SCRIPT_DIR/config/.env.production.template"
-            ;;
-        2)
-            ENV_TYPE="test"
-            TEMPLATE="$SCRIPT_DIR/config/.env.test.template"
-            ;;
-        *)
-            print_error "Invalid choice"
+        case $env_choice in
+            1)
+                ENV_TYPE="production"
+                TEMPLATE="$SCRIPT_DIR/config/.env.production.template"
+                ;;
+            2)
+                ENV_TYPE="test"
+                TEMPLATE="$SCRIPT_DIR/config/.env.test.template"
+                ;;
+            *)
+                print_error "Invalid choice"
+                exit 1
+                ;;
+        esac
+
+        save_cache "ENV_TYPE" "$ENV_TYPE"
+        print_success "Selected: $ENV_TYPE environment"
+        echo ""
+
+        # Collect common values
+        print_header "Common Configuration"
+
+        read -p "MongoDB URI: " MONGO_URI_INPUT
+        if [[ -z "$MONGO_URI_INPUT" ]]; then
+            print_error "MongoDB URI is required"
             exit 1
-            ;;
-    esac
+        fi
+        MONGO_URI=$MONGO_URI_INPUT
+        save_cache "MONGO_URI" "$MONGO_URI"
 
-    save_cache "ENV_TYPE" "$ENV_TYPE"
-    print_success "Selected: $ENV_TYPE environment"
-    echo ""
+        if [[ "$ENV_TYPE" == "production" ]]; then
+            MONGO_DB_DEFAULT="production_database"
+        else
+            MONGO_DB_DEFAULT="test_database"
+        fi
 
-    # Collect common values
-    print_header "Common Configuration"
+        read -p "MongoDB Database [$MONGO_DB_DEFAULT]: " MONGO_DB_INPUT
+        MONGO_DB=${MONGO_DB_INPUT:-$MONGO_DB_DEFAULT}
+        save_cache "MONGO_DB" "$MONGO_DB"
 
-    read -p "MongoDB URI: " MONGO_URI_INPUT
-    if [[ -z "$MONGO_URI_INPUT" ]]; then
-        print_error "MongoDB URI is required"
-        exit 1
-    fi
-    MONGO_URI=$MONGO_URI_INPUT
-    save_cache "MONGO_URI" "$MONGO_URI"
+        read -p "Internal API Key: " API_KEY_INPUT
+        if [[ -z "$API_KEY_INPUT" ]]; then
+            print_error "Internal API Key is required"
+            exit 1
+        fi
+        API_KEY=$API_KEY_INPUT
+        save_cache "API_KEY" "$API_KEY"
 
-    if [[ "$ENV_TYPE" == "production" ]]; then
-        MONGO_DB_DEFAULT="production_database"
+        print_success "Configuration collected"
+        echo ""
     else
-        MONGO_DB_DEFAULT="test_database"
+        print_info "Using cached configuration values (ENV_TYPE, MONGO_URI, MONGO_DB, API_KEY)"
+        echo ""
     fi
-
-    read -p "MongoDB Database [$MONGO_DB_DEFAULT]: " MONGO_DB_INPUT
-    MONGO_DB=${MONGO_DB_INPUT:-$MONGO_DB_DEFAULT}
-    save_cache "MONGO_DB" "$MONGO_DB"
-
-    read -p "Internal API Key: " API_KEY_INPUT
-    if [[ -z "$API_KEY_INPUT" ]]; then
-        print_error "Internal API Key is required"
-        exit 1
-    fi
-    API_KEY=$API_KEY_INPUT
-    save_cache "API_KEY" "$API_KEY"
-
-    print_success "Configuration collected"
-    echo ""
 
     # Port Configuration
     print_header "Port Configuration"
