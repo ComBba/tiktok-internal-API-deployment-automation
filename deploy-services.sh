@@ -172,9 +172,20 @@ save_cache() {
 
     # Create or update cache file
     if [[ -f "$CACHE_FILE" ]]; then
+        # Check and fix permissions if needed
+        local perms=$(stat -c %a "$CACHE_FILE" 2>/dev/null || stat -f %A "$CACHE_FILE" 2>/dev/null)
+        if [[ "$perms" != "600" ]]; then
+            chmod 600 "$CACHE_FILE"
+        fi
+
         # Remove existing key if present
         grep -v "^${key}=" "$CACHE_FILE" > "${CACHE_FILE}.tmp" 2>/dev/null || true
         mv "${CACHE_FILE}.tmp" "$CACHE_FILE"
+        chmod 600 "${CACHE_FILE}"
+    else
+        # Create new cache file with secure permissions
+        touch "$CACHE_FILE"
+        chmod 600 "$CACHE_FILE"
     fi
 
     # Append new value
@@ -394,6 +405,8 @@ interactive_env_setup() {
     if [[ -f "$CACHE_FILE" ]]; then
         echo ""
         print_warning "Found previous deployment configuration cache"
+        print_info "Cache file contains sensitive data (API keys, MongoDB URI)"
+        print_info "File permissions: $(stat -c %a "$CACHE_FILE" 2>/dev/null || stat -f %A "$CACHE_FILE" 2>/dev/null)"
         echo ""
         echo "Options:"
         echo "  1) Resume from cache (use previous values)"
