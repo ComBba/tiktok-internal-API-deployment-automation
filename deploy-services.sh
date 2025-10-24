@@ -33,15 +33,28 @@ SUCCESS_COUNT=0
 FAIL_COUNT=0
 
 # Temporary files tracking
-declare -a TEMP_LOG_FILES=()
+declare -a SUCCESS_LOG_FILES=()
+declare -a ERROR_LOG_FILES=()
 
 # Cleanup function for temporary files
 cleanup_temp_files() {
-    for temp_file in "${TEMP_LOG_FILES[@]}"; do
+    # Only clean up success logs, preserve error logs for debugging
+    for temp_file in "${SUCCESS_LOG_FILES[@]}"; do
         if [[ -f "$temp_file" ]]; then
             rm -f "$temp_file" 2>/dev/null || true
         fi
     done
+
+    # Print error log locations if any failures occurred
+    if [[ ${#ERROR_LOG_FILES[@]} -gt 0 ]]; then
+        echo ""
+        echo "Error logs preserved for debugging:"
+        for error_log in "${ERROR_LOG_FILES[@]}"; do
+            if [[ -f "$error_log" ]]; then
+                echo "  • $error_log"
+            fi
+        done
+    fi
 }
 
 # Register cleanup on exit
@@ -826,14 +839,15 @@ build_service() {
 
     # Create secure temporary log file
     local temp_log=$(mktemp "${TMPDIR:-/tmp}/build_${service_name}_XXXXXX.log")
-    TEMP_LOG_FILES+=("$temp_log")
 
     if docker_compose build &> "$temp_log"; then
         print_success "$service_name: Build completed"
+        SUCCESS_LOG_FILES+=("$temp_log")
         return 0
     else
         print_error "$service_name: Build failed"
         print_info "See log: $temp_log"
+        ERROR_LOG_FILES+=("$temp_log")
         return 1
     fi
 }
@@ -848,14 +862,15 @@ start_service() {
 
     # Create secure temporary log file
     local temp_log=$(mktemp "${TMPDIR:-/tmp}/start_${service_name}_XXXXXX.log")
-    TEMP_LOG_FILES+=("$temp_log")
 
     if docker_compose up -d &> "$temp_log"; then
         print_success "$service_name: Started successfully"
+        SUCCESS_LOG_FILES+=("$temp_log")
         return 0
     else
         print_error "$service_name: Failed to start"
         print_info "See log: $temp_log"
+        ERROR_LOG_FILES+=("$temp_log")
         return 1
     fi
 }

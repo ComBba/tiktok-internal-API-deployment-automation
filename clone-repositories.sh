@@ -33,15 +33,28 @@ SKIP_COUNT=0
 FAIL_COUNT=0
 
 # Temporary files tracking
-declare -a TEMP_LOG_FILES=()
+declare -a SUCCESS_LOG_FILES=()
+declare -a ERROR_LOG_FILES=()
 
 # Cleanup function for temporary files
 cleanup_temp_files() {
-    for temp_file in "${TEMP_LOG_FILES[@]}"; do
+    # Only clean up success logs, preserve error logs for debugging
+    for temp_file in "${SUCCESS_LOG_FILES[@]}"; do
         if [[ -f "$temp_file" ]]; then
             rm -f "$temp_file" 2>/dev/null || true
         fi
     done
+
+    # Print error log locations if any failures occurred
+    if [[ ${#ERROR_LOG_FILES[@]} -gt 0 ]]; then
+        echo ""
+        echo "Error logs preserved for debugging:"
+        for error_log in "${ERROR_LOG_FILES[@]}"; do
+            if [[ -f "$error_log" ]]; then
+                echo "  • $error_log"
+            fi
+        done
+    fi
 }
 
 # Register cleanup on exit
@@ -260,7 +273,6 @@ clone_repository() {
 
     # Create secure temporary log file
     local temp_log=$(mktemp "${TMPDIR:-/tmp}/clone_${repo_name}_XXXXXX.log")
-    TEMP_LOG_FILES+=("$temp_log")
 
     local max_retries=3
     local retry=0
@@ -268,6 +280,7 @@ clone_repository() {
     while [[ $retry -lt $max_retries ]]; do
         if git clone --branch "$branch" "$repo_url" "$target_dir" &> "$temp_log"; then
             print_success "$repo_name cloned successfully"
+            SUCCESS_LOG_FILES+=("$temp_log")
             ((++SUCCESS_COUNT))
             return 0  # Return code 0 for success
         fi
@@ -287,6 +300,7 @@ clone_repository() {
     # All retries exhausted
     print_error "Failed to clone $repo_name after $max_retries attempts"
     print_info "See log: $temp_log"
+    ERROR_LOG_FILES+=("$temp_log")
     ((++FAIL_COUNT))
     return 1  # Return code 1 for failure
 }
