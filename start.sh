@@ -110,6 +110,17 @@ EOF
 # Utility Functions
 # =============================================================================
 
+# Cross-platform sed in-place editing
+sed_inplace() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS (BSD sed)
+        sed -i '' "$@"
+    else
+        # Linux (GNU sed)
+        sed -i "$@"
+    fi
+}
+
 print_banner() {
     clear
     echo -e "${CYAN}"
@@ -252,13 +263,22 @@ step_clone_repositories() {
         if [[ "$NON_INTERACTIVE" == false ]]; then
             read -p "Enter your GitHub username: " github_username || true
 
-            if [[ -n "$github_username" ]]; then
-                sed -i "s/YOUR_GITHUB_USERNAME/$github_username/g" "$SCRIPT_DIR/config/repositories.conf"
-                print_success "Updated repositories.conf with username: $github_username"
-            else
-                print_error "No username provided"
+            # Validate username is not empty
+            if [[ -z "$github_username" ]]; then
+                print_error "GitHub username is required"
                 exit 1
             fi
+
+            # Validate username format (alphanumeric, dash, underscore only)
+            if ! [[ "$github_username" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+                print_error "Invalid GitHub username format"
+                print_info "Username can only contain: letters, numbers, dash (-), underscore (_)"
+                exit 1
+            fi
+
+            # Use cross-platform sed
+            sed_inplace "s/YOUR_GITHUB_USERNAME/$github_username/g" "$SCRIPT_DIR/config/repositories.conf"
+            print_success "Updated repositories.conf with username: $github_username"
         else
             exit 1
         fi
