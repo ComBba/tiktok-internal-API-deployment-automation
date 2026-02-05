@@ -65,15 +65,28 @@ trap cleanup_temp_files EXIT
 # =============================================================================
 
 check_network() {
-    local test_hosts=("github.com" "8.8.8.8")
     local connected=false
 
-    for host in "${test_hosts[@]}"; do
-        if ping -c 1 -W 2 "$host" &> /dev/null; then
+    # Try curl first (most reliable for HTTP-based checks)
+    if command -v curl &> /dev/null; then
+        if curl -s --connect-timeout 5 --max-time 10 https://github.com > /dev/null 2>&1; then
             connected=true
-            break
         fi
-    done
+    # Fall back to wget
+    elif command -v wget &> /dev/null; then
+        if wget -q --timeout=5 --spider https://github.com 2>&1; then
+            connected=true
+        fi
+    # Last resort: try ping (may fail on servers with ICMP blocked)
+    else
+        local test_hosts=("github.com" "8.8.8.8")
+        for host in "${test_hosts[@]}"; do
+            if ping -c 1 -W 2 "$host" &> /dev/null; then
+                connected=true
+                break
+            fi
+        done
+    fi
 
     if [[ "$connected" == false ]]; then
         print_error "No network connectivity detected"
